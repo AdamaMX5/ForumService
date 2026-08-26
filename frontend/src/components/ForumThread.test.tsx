@@ -15,9 +15,6 @@ function renderThread(nodeId: string, accessToken: string | null = null) {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  // LikeButton reads its "liked by me" flag from real localStorage on mount - clear it so one
-  // test's like click can't change another test's initial aria-pressed state for the same node.
-  localStorage.clear();
 });
 
 describe('ForumThread', () => {

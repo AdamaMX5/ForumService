@@ -1,16 +1,8 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { createForumApi, type ForumApi } from '../api/forumApi';
 import * as authClient from './authClient';
-import { decodeJwt, msUntilRefresh, type JwtPayload } from './jwt';
-import { withRefreshLock } from './refreshLock';
+import { decodeJwt, type JwtPayload } from './jwt';
+import { useTokenRefreshScheduler } from './useTokenRefreshScheduler';
 
 /**
  * Lets a host application (e.g. FreiSchule, which already manages its own login/refresh
@@ -53,53 +45,21 @@ export function ForumAuthProvider({ children, externalAuth, forumApiBaseUrl }: F
   const isExternallyManaged = externalAuth !== undefined;
   const baseUrl = (forumApiBaseUrl ?? import.meta.env.VITE_FORUM_API_URL ?? '').replace(/\/$/, '');
 
-  const [internalToken, setInternalToken] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const tokenRef = useRef<string | null>(null);
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const {
+    token: internalToken,
+    tokenRef,
+    applyToken,
+    ensureFreshToken: ensureFreshTokenInternal,
+    clearRefreshTimer,
+    reset: resetInternalToken,
+  } = useTokenRefreshScheduler();
 
   const accessToken = isExternallyManaged ? externalAuth!.accessToken : internalToken;
   tokenRef.current = accessToken;
-
-  const clearRefreshTimer = useCallback(() => {
-    if (refreshTimerRef.current !== null) {
-      clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = null;
-    }
-  }, []);
-
-  const applyToken = useCallback(
-    (token: string) => {
-      setInternalToken(token);
-      tokenRef.current = token;
-      const payload = decodeJwt(token);
-      clearRefreshTimer();
-      if (payload) {
-        refreshTimerRef.current = setTimeout(() => {
-          ensureFreshTokenInternal().catch(() => undefined);
-          // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, msUntilRefresh(payload));
-      }
-    },
-    [clearRefreshTimer]
-  );
-
-  const ensureFreshTokenInternal = useCallback((): Promise<string> => {
-    return withRefreshLock(async () => {
-      const { access_token } = await authClient.refresh();
-      applyToken(access_token);
-      return access_token;
-    }).catch((err) => {
-      setInternalToken(null);
-      tokenRef.current = null;
-      clearRefreshTimer();
-      throw err;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applyToken, clearRefreshTimer]);
 
   // Auto-login: if a valid refresh_token cookie already exists (user is logged in via another
   // freischule.info app / a previous visit), pick it up silently on mount. A failure here just
@@ -197,11 +157,9 @@ export function ForumAuthProvider({ children, externalAuth, forumApiBaseUrl }: F
   );
 
   const logout = useCallback(async () => {
-    clearRefreshTimer();
-    setInternalToken(null);
-    tokenRef.current = null;
+    resetInternalToken();
     await authClient.logout().catch(() => undefined);
-  }, [clearRefreshTimer]);
+  }, [resetInternalToken]);
 
   const value: ForumAuthContextValue = {
     accessToken,

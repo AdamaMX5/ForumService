@@ -4,14 +4,15 @@ const Edge = require('../models/Edge');
 const Like = require('../models/Like');
 const Comment = require('../models/Comment');
 const { optionalAuth, requireAuth, requireRole } = require('../middleware/auth');
-const { writeLimiter } = require('../middleware/rateLimit');
+const { writeLimiter, readLimiter } = require('../middleware/rateLimit');
 const { isAdmin, isModOrAdmin } = require('../config/roles');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/httpError');
 const { requireValidObjectId } = require('../utils/validateId');
 const { serializeNode, serializeComment } = require('../utils/serialize');
 const { buildPaginationQuery, buildNextCursor } = require('../utils/sorting');
-const { isNodeVisible } = require('../services/visibility');
+const { getLikedIdSet, likedByMeFor } = require('../utils/likedByMe');
+const { isNodeVisible, walkAncestorChain } = require('../services/visibility');
 const emailService = require('../services/emailService');
 const profileService = require('../services/profileService');
 
@@ -50,7 +51,80 @@ router.get(
   optionalAuth,
   asyncHandler(async (req, res) => {
     const node = await loadVisible(req.params.id, req.user);
-    res.json(serializeNode(node));
+    const likedByMe = req.user
+      ? !!(await Like.exists({ node_id: node._id, user_id: req.user.sub }))
+      : undefined;
+    res.json(serializeNode(node, { likedByMe }));
+  })
+);
+
+// GET /nodes/:id/referenzen?limit= - ausgehende referenz-Edges dieses Nodes, aufgeloest zu den
+// jeweiligen Ziel-Nodes. Ziele, die geloescht oder fuer den Aufrufer nicht sichtbar sind, werden
+// stillschweigend rausgefiltert statt einen Fehler zu werfen (der Zugriff auf :id selbst ist ja
+// bereits erlaubt - fehlende Sichtbarkeit eines referenzierten Ziels ist kein Fehlerfall).
+router.get(
+  '/:id/referenzen',
+  optionalAuth,
+  readLimiter,
+  asyncHandler(async (req, res) => {
+    const source = await loadVisible(req.params.id, req.user);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+
+    const edges = await Edge.find({ von: source._id, typ: 'referenz' })
+      .sort({ erstellt_am: -1 })
+      .limit(limit)
+      .lean();
+
+    if (edges.length === 0) {
+      return res.json({ data: [] });
+    }
+
+    const targets = await Node.find({
+      _id: { $in: edges.map((e) => e.zu) },
+      soft_deleted: false,
+    }).lean();
+    const targetById = new Map(targets.map((t) => [String(t._id), t]));
+    const likedIds = await getLikedIdSet(req.user?.sub, targets.map((t) => t._id));
+
+    const data = [];
+    for (const edge of edges) {
+      const target = targetById.get(String(edge.zu));
+      if (!target) continue;
+      // eslint-disable-next-line no-await-in-loop
+      if (!(await isNodeVisible(target, req.user))) continue;
+      data.push({
+        ...serializeNode(target, { likedByMe: likedByMeFor(likedIds, target._id) }),
+        referenz: { id: String(edge._id), erstellt_am: edge.erstellt_am, autor_id: edge.autor_id },
+      });
+    }
+
+    res.json({ data });
+  })
+);
+
+// GET /nodes/:id/pfad - Pfad von der Thema-Wurzel bis zu :id (root-first), damit Clients (z.B.
+// das ?fokus=-Deep-Link im Frontend) den Baum entlang dieses Pfads aufklappen koennen.
+// Sichtbarkeit wird einmal auf :id selbst geprueft (loadVisible) - sie ist eine Eigenschaft der
+// Thema-Wurzel und gilt fuer den kompletten Teilbaum (siehe isNodeVisible), daher keine
+// Einzelpruefung pro Pfad-Element noetig.
+router.get(
+  '/:id/pfad',
+  optionalAuth,
+  readLimiter,
+  asyncHandler(async (req, res) => {
+    await loadVisible(req.params.id, req.user);
+
+    const chain = await walkAncestorChain(req.params.id);
+    if (chain.length === 0) throw new HttpError(404, 'Node not found');
+
+    const likedIds = await getLikedIdSet(req.user?.sub, chain.map(({ node }) => node._id));
+
+    res.json({
+      data: chain.map(({ node, edgeTyp }) => ({
+        ...serializeNode(node, { likedByMe: likedByMeFor(likedIds, node._id) }),
+        edge_typ: edgeTyp,
+      })),
+    });
   })
 );
 
@@ -89,10 +163,11 @@ router.get(
     });
 
     const items = await Node.find(filter).sort(sortSpec).limit(limit).lean();
+    const likedIds = await getLikedIdSet(req.user?.sub, items.map((item) => item._id));
 
     res.json({
       data: items.map((item) => ({
-        ...serializeNode(item),
+        ...serializeNode(item, { likedByMe: likedByMeFor(likedIds, item._id) }),
         edge_typ: edgeTypeByChild.get(String(item._id)) || null,
       })),
       nextCursor: buildNextCursor(items, sortField),

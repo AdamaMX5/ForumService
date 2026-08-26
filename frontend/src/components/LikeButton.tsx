@@ -1,41 +1,23 @@
 import { useState } from 'react';
 import { useForumAuth } from '../auth/AuthContext';
 
-// Backend has no "did I like this node" endpoint (see frontend/README.md "Known backend gaps"),
-// so "liked by me" is tracked purely client-side, per browser, in localStorage - it is a UI
-// nicety, not an authoritative cross-device signal.
-const STORAGE_KEY = 'forum:likedNodeIds';
-
-function readLikedSet(): Set<string> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function writeLikedSet(set: Set<string>) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
-  } catch {
-    // ignore (private browsing / storage disabled) - like still works for this page load
-  }
-}
-
 export function LikeButton({
   nodeId,
   likesCount,
+  likedByMe,
   onLikesCountChange,
   onRequireAuth,
 }: {
   nodeId: string;
   likesCount: number;
+  /** Server-reported "did I like this" from the node's `liked_by_me` field - null (anonymous
+   * request) is treated as not-liked, since liking requires auth anyway. */
+  likedByMe: boolean | null;
   onLikesCountChange: (next: number) => void;
   onRequireAuth: () => void;
 }) {
   const { accessToken, api } = useForumAuth();
-  const [liked, setLiked] = useState(() => readLikedSet().has(nodeId));
+  const [liked, setLiked] = useState(() => likedByMe ?? false);
   const [isBusy, setIsBusy] = useState(false);
 
   async function toggle() {
@@ -55,10 +37,6 @@ export function LikeButton({
     try {
       const result = nextLiked ? await api.like(nodeId) : await api.unlike(nodeId);
       onLikesCountChange(result.likes_count);
-      const set = readLikedSet();
-      if (nextLiked) set.add(nodeId);
-      else set.delete(nodeId);
-      writeLikedSet(set);
     } catch {
       // Rollback optimistic update on failure (e.g. already liked elsewhere, network error).
       setLiked(wasLiked);

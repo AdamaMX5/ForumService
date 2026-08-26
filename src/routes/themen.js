@@ -5,6 +5,7 @@ const { isModOrAdmin } = require('../config/roles');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { serializeNode } = require('../utils/serialize');
 const { buildPaginationQuery, buildNextCursor } = require('../utils/sorting');
+const { getLikedIdSet, likedByMeFor } = require('../utils/likedByMe');
 
 const router = express.Router();
 
@@ -38,9 +39,10 @@ router.get(
     });
 
     const items = await Node.find(filter).sort(sortSpec).limit(limit).lean();
+    const likedIds = await getLikedIdSet(req.user?.sub, items.map((item) => item._id));
 
     res.json({
-      data: items.map(serializeNode),
+      data: items.map((item) => serializeNode(item, { likedByMe: likedByMeFor(likedIds, item._id) })),
       nextCursor: buildNextCursor(items, sortField),
     });
   })

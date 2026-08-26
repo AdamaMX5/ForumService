@@ -5,6 +5,7 @@ import type {
   NewNodeInput,
   Paginated,
   ReferenzEdge,
+  ReferenzListItem,
   SortMode,
 } from './types';
 
@@ -118,6 +119,16 @@ export function createForumApi(baseUrl: string, auth: ForumApiAuthAdapter) {
         method: 'POST',
         body: JSON.stringify({ target_node_id: targetNodeId }),
       });
+    },
+
+    getReferenzen(nodeId: string, limit?: number): Promise<{ data: ReferenzListItem[] }> {
+      const qs = toQueryString({ limit });
+      return request(`/nodes/${nodeId}/referenzen${qs}`);
+    },
+
+    /** Root-to-node ancestor chain (thema first), for fully expanding a `?fokus=` deep link. */
+    getPfad(nodeId: string): Promise<{ data: ForumChildNode[] }> {
+      return request(`/nodes/${nodeId}/pfad`);
     },
 
     like(nodeId: string): Promise<{ likes_count: number }> {

@@ -5,7 +5,10 @@ function currentVersion(versions) {
   return versions[versions.length - 1];
 }
 
-function serializeNode(node) {
+// `likedByMe` is the caller's precomputed "did the current user like this node" result (a single
+// or batched Like lookup done by the route, never derived here) - undefined (anonymous caller,
+// or the route simply didn't check) serializes to `null`, distinguishing "unknown" from `false`.
+function serializeNode(node, { likedByMe } = {}) {
   return {
     id: String(node._id),
     typ: node.typ,
@@ -20,6 +23,7 @@ function serializeNode(node) {
     erstellt_am: node.erstellt_am,
     likes_count: node.likes_count,
     comments_count: node.comments_count,
+    liked_by_me: likedByMe === undefined ? null : likedByMe,
     bearbeitet_von: node.bearbeitet_von || [],
     soft_deleted: node.soft_deleted,
     soft_deleted_grund: node.soft_deleted_grund,

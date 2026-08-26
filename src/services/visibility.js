@@ -3,35 +3,53 @@ const Edge = require('../models/Edge');
 const { isModOrAdmin } = require('../config/roles');
 
 const MAX_ANCESTOR_DEPTH = 50;
+const TREE_EDGE_TYPES = ['pro', 'contra', 'differenzierung'];
+
+/**
+ * Walks the non-referenz parent chain (edge.von -> edge.zu) from nodeId up to the root "thema",
+ * returning the full chain root-first as `{ node, edgeTyp }` pairs (node is a lean doc; edgeTyp
+ * is the tree-edge connecting that node down to its own child - i.e. which pro/contra/
+ * differenzierung column it hangs in under its parent - null for the root/orphan at index 0).
+ * Bounded by MAX_ANCESTOR_DEPTH and a visited-set to guard against malformed/cyclic data.
+ * Returns [] if nodeId itself (or, defensively, any ancestor referenced by a dangling edge)
+ * can't be resolved - mirrors findRootThemaId's previous "return null" for that case.
+ */
+async function walkAncestorChain(nodeId) {
+  const chain = [];
+  let currentId = String(nodeId);
+  const visited = new Set([currentId]);
+
+  for (let depth = 0; depth < MAX_ANCESTOR_DEPTH; depth += 1) {
+    const node = await Node.findById(currentId).lean();
+    if (!node) return [];
+    chain.push({ node, edgeTyp: null });
+
+    if (node.typ === 'thema') break;
+
+    const parentEdge = await Edge.findOne({ von: currentId, typ: { $in: TREE_EDGE_TYPES } })
+      .select('zu typ')
+      .lean();
+    if (!parentEdge) break; // orphaned argument, treat itself as root for visibility purposes
+
+    const nextId = String(parentEdge.zu);
+    if (visited.has(nextId)) break; // cycle guard
+    chain[chain.length - 1].edgeTyp = parentEdge.typ;
+    visited.add(nextId);
+    currentId = nextId;
+  }
+
+  chain.reverse(); // built leaf-first above, callers want root-first
+  return chain;
+}
 
 /**
  * Walks the non-referenz parent chain (edge.von -> edge.zu) up to the root "thema".
  * Bounded by MAX_ANCESTOR_DEPTH and a visited-set to guard against malformed/cyclic data.
  */
 async function findRootThemaId(nodeId) {
-  let currentId = String(nodeId);
-  const visited = new Set([currentId]);
-
-  for (let depth = 0; depth < MAX_ANCESTOR_DEPTH; depth += 1) {
-    const node = await Node.findById(currentId).select('typ').lean();
-    if (!node) return null;
-    if (node.typ === 'thema') return currentId;
-
-    const parentEdge = await Edge.findOne({
-      von: currentId,
-      typ: { $in: ['pro', 'contra', 'differenzierung'] },
-    })
-      .select('zu')
-      .lean();
-    if (!parentEdge) return currentId; // orphaned argument, treat itself as root for visibility purposes
-
-    const nextId = String(parentEdge.zu);
-    if (visited.has(nextId)) return currentId; // cycle guard
-    visited.add(nextId);
-    currentId = nextId;
-  }
-
-  return currentId;
+  const chain = await walkAncestorChain(nodeId);
+  if (chain.length === 0) return null;
+  return String(chain[0].node._id);
 }
 
 /**
@@ -57,4 +75,4 @@ async function isNodeVisible(node, user) {
   return canViewThema(root, user);
 }
 
-module.exports = { findRootThemaId, canViewThema, isNodeVisible };
+module.exports = { walkAncestorChain, findRootThemaId, canViewThema, isNodeVisible };

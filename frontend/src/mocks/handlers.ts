@@ -1,6 +1,21 @@
 import { http, HttpResponse } from 'msw';
-import type { EdgeTyp, ForumChildNode, ForumComment, ForumNode } from '../api/types';
+import type { EdgeTyp, ForumChildNode, ForumComment, ForumNode, ReferenzListItem } from '../api/types';
 import { mockComments, mockDemoUser, mockEdges, mockNodes } from './data';
+
+const TREE_EDGE_TYPES: EdgeTyp[] = ['pro', 'contra', 'differenzierung'];
+
+// Mirrors the backend's per-request-authenticated liked_by_me semantics (null = anonymous,
+// boolean = authenticated) closely enough for local dev/demo - tracked per node id here since the
+// mock has no real per-user session concept.
+const mockLikedNodeIds = new Set<string>();
+
+function isAuthenticated(request: Request): boolean {
+  return request.headers.get('Authorization') !== null;
+}
+
+function withLikedByMe<T extends ForumNode>(node: T, request: Request): T {
+  return { ...node, liked_by_me: isAuthenticated(request) ? mockLikedNodeIds.has(node.id) : null };
+}
 
 // --- tiny fake JWT (unsigned, decode-only - real signature verification never happens client-side) ---
 function base64UrlEncode(obj: unknown): string {
@@ -106,7 +121,9 @@ export const handlers = [
   // --- ForumService mocks ---
   http.get(forumUrl('/themen'), ({ request }) => {
     const url = new URL(request.url);
-    const themen = [...mockNodes.values()].filter((n) => n.typ === 'thema' && !n.soft_deleted);
+    const themen = [...mockNodes.values()]
+      .filter((n) => n.typ === 'thema' && !n.soft_deleted)
+      .map((n) => withLikedByMe(n, request));
     const sorted = sortNodes(themen, url.searchParams.get('sort'));
     return HttpResponse.json(paginate(sorted, url.searchParams.get('cursor'), Number(url.searchParams.get('limit')) || 20));
   }),
@@ -115,19 +132,67 @@ export const handlers = [
     const url = new URL(request.url);
     const parentId = params.id as string;
     const typFilter = url.searchParams.get('typ') as EdgeTyp | null;
-    const edgeTypes: EdgeTyp[] = typFilter ? [typFilter] : ['pro', 'contra', 'differenzierung'];
+    const edgeTypes: EdgeTyp[] = typFilter ? [typFilter] : TREE_EDGE_TYPES;
 
     const childEdges = mockEdges.filter((e) => e.zu === parentId && edgeTypes.includes(e.typ as EdgeTyp));
     const children: ForumChildNode[] = childEdges
       .map((e): ForumChildNode | null => {
         const n = mockNodes.get(e.von);
         if (!n || n.soft_deleted) return null;
-        return { ...n, edge_typ: e.typ as EdgeTyp };
+        return { ...withLikedByMe(n, request), edge_typ: e.typ as EdgeTyp };
       })
       .filter((n): n is ForumChildNode => n !== null);
 
     const sorted = sortNodes(children, url.searchParams.get('sort')) as ForumChildNode[];
     return HttpResponse.json(paginate(sorted, url.searchParams.get('cursor'), Number(url.searchParams.get('limit')) || 20));
+  }),
+
+  // Root-to-node ancestor chain (thema first), walking the same pro/contra/differenzierung edges
+  // as GET /nodes/:id/kinder but upward via `von` - mirrors the backend's findRootThemaId-style
+  // walk (visited-set guarded against malformed/cyclic mock data).
+  http.get(forumUrl('/nodes/:id/pfad'), ({ request, params }) => {
+    const leafId = params.id as string;
+    const leaf = mockNodes.get(leafId);
+    if (!leaf || leaf.soft_deleted) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+
+    const chain: ForumChildNode[] = [{ ...withLikedByMe(leaf, request), edge_typ: null }];
+    const visited = new Set([leafId]);
+    let currentId = leafId;
+    for (let i = 0; i < 50; i += 1) {
+      const parentEdge = mockEdges.find((e) => e.von === currentId && TREE_EDGE_TYPES.includes(e.typ as EdgeTyp));
+      if (!parentEdge) break;
+      const parent = mockNodes.get(parentEdge.zu);
+      if (!parent || parent.soft_deleted || visited.has(parentEdge.zu)) break;
+      chain[chain.length - 1].edge_typ = parentEdge.typ as EdgeTyp;
+      chain.push({ ...withLikedByMe(parent, request), edge_typ: null });
+      visited.add(parentEdge.zu);
+      currentId = parentEdge.zu;
+      if (parent.typ === 'thema') break;
+    }
+    chain.reverse();
+    return HttpResponse.json({ data: chain });
+  }),
+
+  // Outgoing `referenz` edges of a node, resolved to their target nodes.
+  http.get(forumUrl('/nodes/:id/referenzen'), ({ request, params }) => {
+    const sourceId = params.id as string;
+    const url = new URL(request.url);
+    const limit = Number(url.searchParams.get('limit')) || 50;
+
+    const data: ReferenzListItem[] = mockEdges
+      .filter((e) => e.von === sourceId && e.typ === 'referenz')
+      .map((e, i): ReferenzListItem | null => {
+        const target = mockNodes.get(e.zu);
+        if (!target || target.soft_deleted) return null;
+        return {
+          ...withLikedByMe(target, request),
+          referenz: { id: `ref-${sourceId}-${i}`, erstellt_am: target.erstellt_am, autor_id: target.ersteller_id },
+        };
+      })
+      .filter((n): n is ReferenzListItem => n !== null)
+      .slice(0, limit);
+
+    return HttpResponse.json({ data });
   }),
 
   http.get(forumUrl('/nodes/:id/kommentare'), ({ request, params }) => {
@@ -161,16 +226,20 @@ export const handlers = [
   }),
 
   http.post(forumUrl('/nodes/:id/likes'), ({ params }) => {
-    const node = mockNodes.get(params.id as string);
+    const nodeId = params.id as string;
+    const node = mockNodes.get(nodeId);
     if (!node) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
     node.likes_count += 1;
+    mockLikedNodeIds.add(nodeId);
     return HttpResponse.json({ likes_count: node.likes_count }, { status: 201 });
   }),
 
   http.delete(forumUrl('/nodes/:id/likes'), ({ params }) => {
-    const node = mockNodes.get(params.id as string);
+    const nodeId = params.id as string;
+    const node = mockNodes.get(nodeId);
     if (!node) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
     node.likes_count = Math.max(0, node.likes_count - 1);
+    mockLikedNodeIds.delete(nodeId);
     return HttpResponse.json({ likes_count: node.likes_count });
   }),
 
@@ -206,6 +275,7 @@ export const handlers = [
       comments_count: 0,
       bearbeitet_von: [],
       soft_deleted: false,
+      liked_by_me: false,
       ...(body.typ === 'thema' ? { sichtbarkeit: 'oeffentlich' as const } : {}),
     };
     mockNodes.set(id, created);
@@ -216,9 +286,9 @@ export const handlers = [
   }),
 
   // Keep this LAST among /nodes/:id routes - it's the catch-all single-node getter.
-  http.get(forumUrl('/nodes/:id'), ({ params }) => {
+  http.get(forumUrl('/nodes/:id'), ({ request, params }) => {
     const node = mockNodes.get(params.id as string);
     if (!node || node.soft_deleted) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
-    return HttpResponse.json(node);
+    return HttpResponse.json(withLikedByMe(node, request));
   }),
 ];

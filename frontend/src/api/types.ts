@@ -42,12 +42,22 @@ export interface ForumNode {
   soft_deleted_von?: string;
   // Only present on typ: "thema" (see serializeNode).
   sichtbarkeit?: Sichtbarkeit;
+  // true/false when the request was authenticated, null when anonymous (unknown) - see
+  // GET /nodes/:id, GET /nodes/:id/kinder, GET /themen.
+  liked_by_me: boolean | null;
 }
 
-// Returned only from GET /nodes/:id/kinder - which pro/contra/differenzierung edge connects
-// this child to the parent that was queried.
+// Returned only from GET /nodes/:id/kinder and GET /nodes/:id/pfad - which pro/contra/
+// differenzierung edge connects this node to its parent. null for the thema root in a /pfad
+// response (it has no parent edge).
 export interface ForumChildNode extends ForumNode {
   edge_typ: EdgeTyp | null;
+}
+
+// Returned only from GET /nodes/:id/referenzen - the target node of an outgoing `referenz` edge,
+// plus metadata about the edge itself.
+export interface ReferenzListItem extends ForumNode {
+  referenz: { id: string; erstellt_am: string; autor_id: string };
 }
 
 export interface ForumComment {

@@ -19,4 +19,5 @@ module.exports = {
   internalApiKey: process.env.INTERNAL_API_KEY,
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '30', 10),
+  rateLimitReadMax: parseInt(process.env.RATE_LIMIT_READ_MAX || '100', 10),
 };

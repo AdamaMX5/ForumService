@@ -36,6 +36,7 @@ function node(
     comments_count: 0,
     bearbeitet_von: [],
     soft_deleted: false,
+    liked_by_me: false,
     ...(typ === 'thema' ? { sichtbarkeit: 'oeffentlich' as const } : {}),
     ...rest,
   };
@@ -67,6 +68,9 @@ export const mockEdges: MockEdge[] = [
   { von: 'a5', zu: 't1', typ: 'contra' },
   { von: 'a6', zu: 't1', typ: 'differenzierung' },
   { von: 'a7', zu: 'a1', typ: 'differenzierung' },
+  // Demo reference: a4 ("individuelle Freiheit") points at a5 as a related counter-argument -
+  // exercises GET /nodes/:id/referenzen without duplicating content.
+  { von: 'a4', zu: 'a5', typ: 'referenz' },
 ];
 
 export const mockComments: ForumComment[] = [

@@ -75,29 +75,26 @@ kein React-Host-Kontext existiert, durch den ein Token gereicht werden koennte).
 Folgt dem URL-Contract aus Spec Abschnitt 12: `?thema=<id>&fokus=<id>&kommentare=<id>`.
 - `thema` bestimmt, welche Wurzel-Diskussion geladen wird (ueberschreibt die `nodeId`-Prop).
 - `kommentare` oeffnet automatisch das Kommentar-Popup fuer den genannten Node.
-- `fokus` hebt den Ziel-Node optisch hervor und scrollt zu ihm, **sobald** er im aktuell geladenen
-  Baum sichtbar ist (siehe "Bekannte Backend-Luecken" unten - automatisches Aufklappen des Pfads
-  von der Wurzel bis zum Ziel ist noch nicht moeglich).
+- `fokus` laedt den vollstaendigen Pfad von der Thema-Wurzel bis zum Ziel-Node (`GET
+  /nodes/:id/pfad`) und klappt jeden `ArgumentNode` auf diesem Pfad automatisch auf, statt den
+  Ziel-Node nur hervorzuheben, wenn er zufaellig schon geladen war.
 
-## Bekannte Backend-Luecken (nicht in diesem Frontend behebbar, Folge-Tasks fuers Backend)
+## Referenzen und Like-Status
 
-1. **Keine Route zum Auflisten ausgehender Referenzen eines Nodes.** `POST /nodes/:id/referenz`
-   existiert, aber es gibt kein `GET`, um vorhandene Referenzen wieder anzuzeigen. Die UI kann
-   Referenzen daher nur *anlegen* ("Referenzieren"-Button an jedem Argument), nicht *auflisten*.
-2. **Kein "hat der aktuelle User dieses Node geliked"-Signal.** Der Like-Status (gefuellte/leere
-   Herz-Anzeige) wird rein client-seitig in `localStorage` nachgehalten (`LikeButton.tsx`) - nicht
-   autoritativ, geraeteuebergreifend inkonsistent.
-3. **Keine Route fuer die Vorfahren eines Nodes.** Der `fokus`-Deep-Link-Parameter kann den
-   Ziel-Node daher nicht automatisch im Baum freilegen (Pfad von der Thema-Wurzel bis dorthin
-   aufklappen) - nur hervorheben, sobald er ohnehin geladen ist.
+- Jeder Node liefert `liked_by_me: boolean | null` (`null` = anonym/unbekannt) direkt vom Backend
+  mit - der `LikeButton` startet mit diesem Wert statt einem lokalen Rate-Mechanismus.
+- Jedes Argument hat einen "Referenzen anzeigen"-Button (`GET /nodes/:id/referenzen`), der die
+  ausgehenden Referenzen dieses Nodes auflistet - zusaetzlich zum bestehenden
+  "Referenzieren"-Button zum Anlegen neuer Referenzen (`POST /nodes/:id/referenz`).
 
 ## Struktur
 
 ```
 src/
   api/          typisierter ForumService-Client + Typen (spiegeln src/utils/serialize.js exakt)
-  auth/         ForumAuthProvider, AuthService-Client, JWT-Decode, Refresh-Mutex
-  components/   ForumThread und alle Unterkomponenten
+  auth/         ForumAuthProvider, AuthService-Client, JWT-Decode, Refresh-Mutex/-Scheduler
+  components/   ForumThread und alle Unterkomponenten (ForumUIContext buendelt sort/focus/
+                Callback-Props fuer den rekursiven Argumentbaum, statt sie durchzureichen)
   hooks/        useCursorPaginated, useDeepLinkParams
   mocks/        MSW-Handler + Demo-Daten (nur VITE_USE_MOCKS=true)
 ```

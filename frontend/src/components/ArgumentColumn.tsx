@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useForumAuth } from '../auth/AuthContext';
+import { useForumUI } from './ForumUIContext';
 import { useCursorPaginated } from '../hooks/useCursorPaginated';
 import { NewArgumentForm } from './NewArgumentForm';
 import { ArgumentNode } from './ArgumentNode';
-import type { EdgeTyp, ForumChildNode, SortMode } from '../api/types';
+import type { EdgeTyp, ForumChildNode } from '../api/types';
 
 const COLUMN_STYLE: Record<EdgeTyp, { label: string; accent: string }> = {
   pro: { label: 'Pro', accent: 'border-t-4 border-t-[var(--forum-pro)]' },
@@ -11,22 +12,9 @@ const COLUMN_STYLE: Record<EdgeTyp, { label: string; accent: string }> = {
   differenzierung: { label: 'Differenzierung', accent: 'border-t-4 border-t-[var(--forum-differenzierung)]' },
 };
 
-export function ArgumentColumn({
-  parentId,
-  edgeTyp,
-  sort,
-  focusNodeId,
-  onOpenComments,
-  onRequireAuth,
-}: {
-  parentId: string;
-  edgeTyp: EdgeTyp;
-  sort: SortMode;
-  focusNodeId: string | null;
-  onOpenComments: (nodeId: string) => void;
-  onRequireAuth: () => void;
-}) {
+export function ArgumentColumn({ parentId, edgeTyp }: { parentId: string; edgeTyp: EdgeTyp }) {
   const { accessToken, api } = useForumAuth();
+  const { sort, onRequireAuth } = useForumUI();
   const [isAdding, setIsAdding] = useState(false);
 
   const fetchPage = useCallback(
@@ -77,13 +65,7 @@ export function ArgumentColumn({
       <ul className="space-y-2">
         {items.map((node) => (
           <li key={node.id}>
-            <ArgumentNode
-              node={node}
-              sort={sort}
-              focusNodeId={focusNodeId}
-              onOpenComments={onOpenComments}
-              onRequireAuth={onRequireAuth}
-            />
+            <ArgumentNode node={node} />
           </li>
         ))}
       </ul>

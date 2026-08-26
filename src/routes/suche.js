@@ -6,6 +6,7 @@ const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/httpError');
 const { serializeNode } = require('../utils/serialize');
 const { isNodeVisible } = require('../services/visibility');
+const { getLikedIdSet, likedByMeFor } = require('../utils/likedByMe');
 
 const router = express.Router();
 
@@ -44,7 +45,8 @@ router.get(
       items = candidates.slice(0, limit);
     }
 
-    res.json({ data: items.map(serializeNode) });
+    const likedIds = await getLikedIdSet(req.user?.sub, items.map((item) => item._id));
+    res.json({ data: items.map((item) => serializeNode(item, { likedByMe: likedByMeFor(likedIds, item._id) })) });
   })
 );
 

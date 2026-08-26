@@ -31,7 +31,13 @@ npm test                 # Jest + mongodb-memory-server, keine echte DB/kein ech
 E-Mail-Benachrichtigung bei neuem Kind-Argument/Kommentar läuft best-effort über EmailService
 (Adresse via ProfileService aufgelöst) und blockiert nie den auslösenden Request.
 
-**Noch nicht Teil dieses Repos** (siehe Abschnitt 2/15 der Spezifikation): die React-Frontend-
-Komponente inkl. Web-Component-Paketierung für TYPO3/PHP-Einbindung, Frontend-seitiges
-Token-Refresh, sowie die in Abschnitt 15 aufgeführten späteren Ausbaustufen (Bearbeitungsvorschläge,
-Digest-Mails, Medien-Spiegelung, Vektor-Suche, Wilson-Score).
+## Frontend (`frontend/`)
+
+React-Komponente `<ForumThread>` (Vite + React 18 + TypeScript + TailwindCSS) inkl.
+Web-Component-Paketierung (`<forum-thread node-id="...">`) für TYPO3/PHP-Einbindung sowie
+eigenständigem Login/Register- und Token-Refresh-Flow gegen den AuthService — siehe
+[`frontend/README.md`](./frontend/README.md) für Setup, Nutzung als React-Bibliothek vs.
+Web Component und bekannte Backend-Lücken, die die UI (noch) umschiffen muss.
+
+**Noch nicht Teil dieses Repos** (siehe Abschnitt 15 der Spezifikation): Bearbeitungsvorschläge,
+Digest-Mails, Medien-Spiegelung, Vektor-Suche, Wilson-Score-Sortierung.

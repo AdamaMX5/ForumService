@@ -1,0 +1,48 @@
+{
+  "name": "@forumservice/frontend",
+  "version": "1.0.0",
+  "description": "React ForumThread component (structured pro/contra/differenzierung argumentation + classic comments) for ForumService, plus a <forum-thread> Web Component build for TYPO3/PHP embedding.",
+  "type": "module",
+  "main": "dist/lib/forum-thread.js",
+  "module": "dist/lib/forum-thread.js",
+  "types": "dist/lib/lib.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/lib.d.ts",
+      "import": "./dist/lib/forum-thread.js"
+    },
+    "./webcomponent": "./dist/webcomponent/forum-thread.iife.js",
+    "./style.css": "./dist/lib/style.css"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:lib && npm run build:webcomponent",
+    "build:lib": "tsc -p tsconfig.json --emitDeclarationOnly --outDir dist/lib && vite build",
+    "build:webcomponent": "vite build --config vite.webcomponent.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-to-webcomponent": "^2.0.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "jsdom": "^24.1.1",
+    "msw": "^2.3.5",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "typescript": "^5.5.4",
+    "vite": "^5.3.5",
+    "vitest": "^2.0.5"
+  }
+}

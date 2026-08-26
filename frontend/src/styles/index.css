@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.forum-thread {
+  --forum-pro: #16a34a;
+  --forum-contra: #dc2626;
+  --forum-differenzierung: #2563eb;
+}

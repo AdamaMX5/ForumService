@@ -83,7 +83,7 @@ describe('ForumUIContext propagates through recursion without prop-drilling', ()
     await waitFor(() => expect(screen.getByText(/Tempolimit/)).toBeInTheDocument());
 
     // Change sort at the top level BEFORE a1's own nested columns have ever mounted/fetched.
-    await user.click(screen.getByRole('button', { name: 'Neueste' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sortierung' }), 'Neueste');
 
     // Only now does a1's nested ArgumentColumn (for pro/contra/differenzierung under a1) mount -
     // neither <ArgumentNode> nor <ArgumentColumn> take a `sort` prop, so this can only be correct

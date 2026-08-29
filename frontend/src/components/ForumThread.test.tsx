@@ -63,14 +63,15 @@ describe('ForumThread', () => {
       renderThread('t1');
       await waitFor(() => expect(seenSorts).toContain('beste')); // default sort mode
 
-      await user.click(screen.getByRole('button', { name: 'Neueste' }));
+      const sortSelect = screen.getByRole('combobox', { name: 'Sortierung' });
+
+      await user.selectOptions(sortSelect, 'Neueste');
       await waitFor(() => expect(seenSorts).toContain('neu'));
 
-      await user.click(screen.getByRole('button', { name: 'Meistgelikt' }));
+      await user.selectOptions(sortSelect, 'Meistgelikt');
       await waitFor(() => expect(seenSorts).toContain('likes'));
 
-      const likesButton = screen.getByRole('button', { name: 'Meistgelikt' });
-      expect(likesButton).toHaveAttribute('aria-pressed', 'true');
+      expect(sortSelect).toHaveValue('likes');
     });
   });
 

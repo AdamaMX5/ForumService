@@ -14,22 +14,17 @@ export function SortSwitcher({
   onChange: (mode: SortMode) => void;
 }) {
   return (
-    <div className="inline-flex rounded border border-gray-300 text-sm dark:border-gray-600" role="group" aria-label="Sortierung">
+    <select
+      aria-label="Sortierung"
+      value={value}
+      onChange={(e) => onChange(e.target.value as SortMode)}
+      className="rounded border border-gray-600 bg-gray-700 px-3 py-1 text-sm text-white"
+    >
       {OPTIONS.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => onChange(opt.value)}
-          aria-pressed={value === opt.value}
-          className={`px-3 py-1 first:rounded-l last:rounded-r ${
-            value === opt.value
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200'
-          }`}
-        >
+        <option key={opt.value} value={opt.value} className="bg-gray-700 text-white">
           {opt.label}
-        </button>
+        </option>
       ))}
-    </div>
+    </select>
   );
 }

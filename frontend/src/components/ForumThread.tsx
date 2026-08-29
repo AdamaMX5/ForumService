@@ -172,7 +172,7 @@ export function ForumThreadView({ nodeId }: { nodeId?: string }) {
   );
 
   return (
-    <div className="forum-thread relative mx-auto max-w-5xl space-y-4 p-4 text-gray-900 dark:text-gray-50">
+    <div className="forum-thread relative w-full space-y-4 p-4 text-gray-900 dark:text-gray-50">
       {listCapable && rootId && (
         <button type="button" onClick={backToThemenliste} className="text-sm text-blue-600 hover:underline">
           ← Zurueck zur Themenliste

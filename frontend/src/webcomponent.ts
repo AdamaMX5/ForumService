@@ -2,6 +2,8 @@
 // 2/12). React/ReactDOM are bundled in via vite.webcomponent.config.ts; auth is always the full
 // standalone ForumAuthProvider login/refresh flow, since there is no host React app here to
 // inject an externalAuth token through (see ForumThread's externalAuth prop for that case).
+// `node-id` is optional - omit it to show the Themen start page (see ForumThread.tsx); r2wc leaves
+// the `nodeId` prop undefined whenever the attribute isn't set on the element.
 import r2wc from 'react-to-webcomponent';
 import React from 'react';
 import ReactDOM from 'react-dom/client';

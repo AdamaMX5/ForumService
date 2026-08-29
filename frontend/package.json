@@ -1,6 +1,6 @@
 {
   "name": "@forumservice/frontend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "React ForumThread component (structured pro/contra/differenzierung argumentation + classic comments) for ForumService, plus a <forum-thread> Web Component build for TYPO3/PHP embedding.",
   "type": "module",
   "main": "dist/lib/forum-thread.js",

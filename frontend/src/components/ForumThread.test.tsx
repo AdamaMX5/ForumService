@@ -131,4 +131,73 @@ describe('ForumThread', () => {
       expect(likeButton.textContent).toBe(countBefore); // unchanged - request never sent
     });
   });
+
+  describe('embedded without a nodeId', () => {
+    function renderWithoutNodeId(accessToken: string | null = null) {
+      return render(<ForumThread forumApiBaseUrl={FORUM_BASE_URL} externalAuth={{ accessToken }} />);
+    }
+
+    afterEach(() => {
+      window.history.replaceState(null, '', '/');
+    });
+
+    it('shows the Themen start page instead of a thread, plus a "+" create button', async () => {
+      renderWithoutNodeId();
+
+      await waitFor(() =>
+        expect(
+          screen.getByText('Sollte auf deutschen Autobahnen ein generelles Tempolimit von 130 km/h gelten?')
+        ).toBeInTheDocument()
+      );
+      expect(screen.queryByText('Pro')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Neues Thema erstellen' })).toBeInTheDocument();
+    });
+
+    it('selecting a thema from the list switches to the thread view with a back link', async () => {
+      const user = userEvent.setup();
+      renderWithoutNodeId();
+
+      await waitFor(() =>
+        expect(
+          screen.getByText('Sollte auf deutschen Autobahnen ein generelles Tempolimit von 130 km/h gelten?')
+        ).toBeInTheDocument()
+      );
+      await user.click(
+        screen.getByText('Sollte auf deutschen Autobahnen ein generelles Tempolimit von 130 km/h gelten?')
+      );
+
+      expect(await screen.findByText('Pro')).toBeInTheDocument();
+      const backLink = screen.getByRole('button', { name: /Zurueck zur Themenliste/ });
+      expect(backLink).toBeInTheDocument();
+
+      await user.click(backLink);
+      expect(await screen.findByRole('heading', { name: 'Themen' })).toBeInTheDocument();
+    });
+
+    it('requires login before opening the new-thema form', async () => {
+      const user = userEvent.setup();
+      renderWithoutNodeId(null);
+
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Themen' })).toBeInTheDocument());
+      await user.click(screen.getByRole('button', { name: 'Neues Thema erstellen' }));
+
+      expect(screen.getAllByRole('dialog')).toHaveLength(1);
+      expect(screen.queryByRole('dialog', { name: 'Neues Thema erstellen' })).not.toBeInTheDocument();
+    });
+
+    it('creating a new thema navigates straight into it', async () => {
+      const user = userEvent.setup();
+      renderWithoutNodeId('fake-token');
+
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Themen' })).toBeInTheDocument());
+      await user.click(screen.getByRole('button', { name: 'Neues Thema erstellen' }));
+
+      const form = screen.getByRole('dialog', { name: 'Neues Thema erstellen' });
+      await user.type(within(form).getByPlaceholderText('Worum soll es in diesem Thema gehen?'), 'Ein brandneues Thema');
+      await user.click(within(form).getByRole('button', { name: 'Thema erstellen' }));
+
+      await waitFor(() => expect(screen.getByText('Ein brandneues Thema')).toBeInTheDocument());
+      expect(screen.getByRole('button', { name: /Zurueck zur Themenliste/ })).toBeInTheDocument();
+    });
+  });
 });

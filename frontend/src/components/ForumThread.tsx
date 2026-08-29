@@ -5,6 +5,8 @@ import { ArgumentColumn } from './ArgumentColumn';
 import { CommentsModal } from './CommentsModal';
 import { ForumUIProvider } from './ForumUIContext';
 import { LoginModal } from './LoginModal';
+import { NewThemaModal } from './NewThemaModal';
+import { ThemenListe } from './ThemenListe';
 import { ThreadHeader } from './ThreadHeader';
 import type { EdgeTyp, ForumNode, SortMode } from '../api/types';
 import '../styles/index.css';
@@ -13,8 +15,13 @@ const CHILD_TYPES: EdgeTyp[] = ['pro', 'contra', 'differenzierung'];
 const EMPTY_PATH: Set<string> = new Set();
 
 export interface ForumThreadProps {
-  /** Root thema (or argument) node id to display. Overridden by a `?thema=` deep-link param if present. */
-  nodeId: string;
+  /**
+   * Root thema (or argument) node id to display. Overridden by a `?thema=` deep-link param if
+   * present. Omit entirely to embed ForumThread without picking a topic upfront - it then shows
+   * a start page listing every Thema (with a "+" button to create the first/a new one); selecting
+   * one drives the view via the `?thema=` deep-link param from then on.
+   */
+  nodeId?: string;
   /**
    * Hand ForumThread an already-managed access token instead of letting it run its own
    * standalone login/refresh flow - use this when the host app (e.g. FreiSchule) already
@@ -35,21 +42,31 @@ export function ForumThread({ nodeId, externalAuth, forumApiBaseUrl }: ForumThre
 
 /** Use this instead of <ForumThread> when you already render a <ForumAuthProvider> higher up
  * (e.g. to share one login session across multiple ForumThread instances on the same page). */
-export function ForumThreadView({ nodeId }: { nodeId: string }) {
+export function ForumThreadView({ nodeId }: { nodeId?: string }) {
   const { api, accessToken } = useForumAuth();
   const [params, setParams] = useDeepLinkParams();
-  const rootId = params.thema || nodeId;
+  const rootId = params.thema || nodeId || null;
+  // Whether this embedding can ever show the Themen start page / "+" create button - only true
+  // when the host didn't pin a fixed nodeId, so there's an actual "list" to fall back/return to.
+  const listCapable = !nodeId;
 
   const [root, setRoot] = useState<ForumNode | null>(null);
-  const [isLoadingRoot, setIsLoadingRoot] = useState(true);
+  const [isLoadingRoot, setIsLoadingRoot] = useState(() => !!rootId);
   const [rootError, setRootError] = useState<string | null>(null);
   const [likesCount, setLikesCount] = useState(0);
   const [sortMode, setSortMode] = useState<SortMode>('beste');
   const [commentsNodeId, setCommentsNodeId] = useState<string | null>(params.kommentare);
   const [showLogin, setShowLogin] = useState(false);
+  const [showNewThema, setShowNewThema] = useState(false);
   const [pathToFocusIds, setPathToFocusIds] = useState<Set<string>>(EMPTY_PATH);
 
   useEffect(() => {
+    if (!rootId) {
+      setRoot(null);
+      setRootError(null);
+      setIsLoadingRoot(false);
+      return;
+    }
     let cancelled = false;
     setIsLoadingRoot(true);
     setRootError(null);
@@ -109,6 +126,28 @@ export function ForumThreadView({ nodeId }: { nodeId: string }) {
     setShowLogin(true);
   }
 
+  function selectThema(id: string) {
+    setParams({ thema: id });
+  }
+
+  function backToThemenliste() {
+    setParams({ thema: null, fokus: null, kommentare: null });
+    setCommentsNodeId(null);
+  }
+
+  function openNewThema() {
+    if (!accessToken) {
+      requireAuth();
+      return;
+    }
+    setShowNewThema(true);
+  }
+
+  function handleThemaCreated(node: ForumNode) {
+    setShowNewThema(false);
+    selectThema(node.id);
+  }
+
   function openComments(targetNodeId: string) {
     setCommentsNodeId(targetNodeId);
     setParams({ kommentare: targetNodeId });
@@ -133,11 +172,19 @@ export function ForumThreadView({ nodeId }: { nodeId: string }) {
   );
 
   return (
-    <div className="forum-thread mx-auto max-w-5xl space-y-4 p-4 text-gray-900 dark:text-gray-50">
-      {isLoadingRoot && <p className="text-sm text-gray-500">Lade Diskussion…</p>}
-      {rootError && <p className="text-sm text-red-600">{rootError}</p>}
+    <div className="forum-thread relative mx-auto max-w-5xl space-y-4 p-4 text-gray-900 dark:text-gray-50">
+      {listCapable && rootId && (
+        <button type="button" onClick={backToThemenliste} className="text-sm text-blue-600 hover:underline">
+          ← Zurueck zur Themenliste
+        </button>
+      )}
 
-      {root && (
+      {!rootId && <ThemenListe onSelect={selectThema} />}
+
+      {rootId && isLoadingRoot && <p className="text-sm text-gray-500">Lade Diskussion…</p>}
+      {rootId && rootError && <p className="text-sm text-red-600">{rootError}</p>}
+
+      {rootId && root && (
         <ForumUIProvider value={ui}>
           <ThreadHeader root={root} likesCount={likesCount} onLikesCountChange={setLikesCount} />
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -150,6 +197,19 @@ export function ForumThreadView({ nodeId }: { nodeId: string }) {
 
       {commentsNodeId && <CommentsModal nodeId={commentsNodeId} onClose={closeComments} />}
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      {showNewThema && <NewThemaModal onCreated={handleThemaCreated} onCancel={() => setShowNewThema(false)} />}
+
+      {listCapable && (
+        <button
+          type="button"
+          onClick={openNewThema}
+          aria-label="Neues Thema erstellen"
+          title="Neues Thema erstellen"
+          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-2xl leading-none text-white shadow-lg hover:bg-blue-700"
+        >
+          +
+        </button>
+      )}
     </div>
   );
 }

@@ -99,6 +99,14 @@ import '@forumservice/frontend/style.css';
 <ForumThread nodeId="<themaId>" />
 ```
 
+`nodeId` ist optional. Ohne `nodeId` (und ohne `?thema=`-Deep-Link-Param) zeigt `<ForumThread>` eine
+Startseite mit allen Themen (`GET /themen`) samt einem "+"-Button unten rechts zum Anlegen eines
+neuen Themas — nützlich für Seiten, die noch kein festes Thema haben bzw. die generische
+Themenübersicht des Forums einbinden wollen. Auswahl eines Themas (oder das Anlegen eines neuen)
+schaltet über den `?thema=`-Deep-Link-Param auf die Einzelthema-Ansicht um, inklusive einem "Zurück
+zur Themenliste"-Link. Wird `nodeId` fest übergeben, bleibt das Verhalten wie bisher: nur dieses
+eine Thema/Argument wird angezeigt, ohne Startseite/"+"-Button.
+
 `<ForumThread>` bringt eigenständig einen kompletten Login/Register-Flow mit (Email-first,
 automatisches Login via Refresh-Cookie, stiller Refresh vor Ablauf). Ist die Host-App bereits
 eingeloggt (z. B. FreeSchool), per `externalAuth` deaktivieren, damit nicht zwei Apps gleichzeitig
@@ -135,9 +143,16 @@ Content-Element einbinden:
 <forum-thread node-id="<themaId>"></forum-thread>
 ```
 
-`node-id` ist das einzige Attribut, das das Custom Element kennt. Die Web-Component läuft immer mit
-dem vollständigen eigenständigen Login/Register-Flow — kein `externalAuth`-Durchreichen möglich, da
-kein React-Host-Kontext existiert.
+`node-id` ist das einzige Attribut, das das Custom Element kennt, und optional — ohne `node-id`
+(und ohne `?thema=`-Deep-Link-Param) zeigt `<forum-thread>` dieselbe Themen-Startseite samt
+"+"-Button wie die React-Variante (s.o.):
+
+```html
+<forum-thread></forum-thread>
+```
+
+Die Web-Component läuft immer mit dem vollständigen eigenständigen Login/Register-Flow — kein
+`externalAuth`-Durchreichen möglich, da kein React-Host-Kontext existiert.
 
 ### CORS
 
@@ -148,7 +163,9 @@ Die einbindende Domain (z. B. die TYPO3-Seite) muss auf der NGINX-Konfiguration 
 ### Deep-Linking
 
 URL-Contract für alle Einbindungsarten identisch: `?thema=<id>&fokus=<id>&kommentare=<id>`.
-- `thema` bestimmt die zu ladende Wurzel-Diskussion (überschreibt `nodeId`/`node-id`).
+- `thema` bestimmt die zu ladende Wurzel-Diskussion (überschreibt `nodeId`/`node-id`). Fehlt `thema`
+  **und** ist `nodeId`/`node-id` nicht gesetzt, zeigt der Client die Themen-Startseite statt eines
+  Threads (s.o.) — Auswahl/Anlegen eines Themas setzt `thema` und schaltet auf die Thread-Ansicht um.
 - `fokus` lädt den Pfad von der Thema-Wurzel bis zum Ziel-Node (`GET /nodes/:id/pfad`) und klappt
   den Baum entlang dieses Pfads automatisch auf.
 - `kommentare` öffnet automatisch das Kommentar-Popup für den genannten Node.

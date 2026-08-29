@@ -154,7 +154,7 @@ describe('ForumThread', () => {
       expect(screen.getByRole('button', { name: 'Neues Thema erstellen' })).toBeInTheDocument();
     });
 
-    it('selecting a thema from the list switches to the thread view with a back link', async () => {
+    it('selecting a thema from the list switches to the thread view with a clickable home heading', async () => {
       const user = userEvent.setup();
       renderWithoutNodeId();
 
@@ -168,10 +168,10 @@ describe('ForumThread', () => {
       );
 
       expect(await screen.findByText('Pro')).toBeInTheDocument();
-      const backLink = screen.getByRole('button', { name: /Zurueck zur Themenliste/ });
-      expect(backLink).toBeInTheDocument();
+      const homeHeading = screen.getByRole('button', { name: 'Diskussionsforum' });
+      expect(homeHeading).toBeInTheDocument();
 
-      await user.click(backLink);
+      await user.click(homeHeading);
       expect(await screen.findByRole('heading', { name: 'Themen' })).toBeInTheDocument();
     });
 
@@ -198,7 +198,7 @@ describe('ForumThread', () => {
       await user.click(within(form).getByRole('button', { name: 'Thema erstellen' }));
 
       await waitFor(() => expect(screen.getByText('Ein brandneues Thema')).toBeInTheDocument());
-      expect(screen.getByRole('button', { name: /Zurueck zur Themenliste/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Diskussionsforum' })).toBeInTheDocument();
     });
   });
 });

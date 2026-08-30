@@ -37,6 +37,17 @@ mit einem CORS-Fehler im Browser fehl (kein Backend-Defekt). Für echte End-to-E
 entweder einen Reverse-Proxy vorschalten, der die Produktions-NGINX-Konfiguration nachbildet, oder
 CORS für den jeweiligen Dev-Origin am Zielservice temporär erlauben.
 
+## Mit festem Startthema oder mit allgemeiner Themenuebersicht
+
+`nodeId` (React) bzw. `node-id` (Web Component) ist optional:
+
+- **Gesetzt** - zeigt direkt die angegebene Wurzel-Diskussion, ohne Einstieg zurueck zu einer
+  Uebersicht (z.B. FreiSchule bindet ein bestimmtes Unterrichtsthema fest ein).
+- **Weggelassen** - zeigt zunaechst die allgemeine Themenuebersicht (alle Themen, sortierbar) samt
+  "+"-Button zum Anlegen eines neuen Themas. Auswahl eines Themas wechselt in die Diskussionsansicht
+  und steuert sich ab dann ueber den `?thema=`-Deep-Link-Parameter (siehe unten). Die Ueberschrift
+  "Diskussionsforum" ist in diesem Modus klickbar und fuehrt jederzeit zurueck zur Themenuebersicht.
+
 ## Nutzung als React-Bibliothek
 
 ```tsx

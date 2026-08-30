@@ -103,9 +103,10 @@ import '@forumservice/frontend/style.css';
 Startseite mit allen Themen (`GET /themen`) samt einem "+"-Button unten rechts zum Anlegen eines
 neuen Themas — nützlich für Seiten, die noch kein festes Thema haben bzw. die generische
 Themenübersicht des Forums einbinden wollen. Auswahl eines Themas (oder das Anlegen eines neuen)
-schaltet über den `?thema=`-Deep-Link-Param auf die Einzelthema-Ansicht um, inklusive einem "Zurück
-zur Themenliste"-Link. Wird `nodeId` fest übergeben, bleibt das Verhalten wie bisher: nur dieses
-eine Thema/Argument wird angezeigt, ohne Startseite/"+"-Button.
+schaltet über den `?thema=`-Deep-Link-Param auf die Einzelthema-Ansicht um; die Überschrift
+"Diskussionsforum" ist dabei klickbar und führt jederzeit zurück zur Themenliste. Wird `nodeId`
+fest übergeben, bleibt das Verhalten wie bisher: nur dieses eine Thema/Argument wird angezeigt,
+ohne Startseite/"+"-Button/"Diskussionsforum"-Überschrift.
 
 `<ForumThread>` bringt eigenständig einen kompletten Login/Register-Flow mit (Email-first,
 automatisches Login via Refresh-Cookie, stiller Refresh vor Ablauf). Ist die Host-App bereits

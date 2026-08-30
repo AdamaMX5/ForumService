@@ -11,7 +11,7 @@ import { ThreadHeader } from './ThreadHeader';
 import type { EdgeTyp, ForumNode, SortMode } from '../api/types';
 import '../styles/index.css';
 
-const CHILD_TYPES: EdgeTyp[] = ['pro', 'contra', 'differenzierung'];
+const CHILD_TYPES: EdgeTyp[] = ['pro', 'differenzierung', 'contra'];
 const EMPTY_PATH: Set<string> = new Set();
 
 export interface ForumThreadProps {
@@ -47,10 +47,6 @@ export function ForumThread({ nodeId, externalAuth, forumApiBaseUrl }: ForumThre
 export function ForumThreadView({ nodeId }: { nodeId?: string }) {
   const { api, accessToken } = useForumAuth();
   const [params, setParams] = useDeepLinkParams();
-  // Whether this embedding can show the "+" create-thema button - only true when the host didn't
-  // pin a fixed nodeId (creating brand-new top-level themen from inside a single fixed-topic
-  // embed isn't something a host that deliberately scoped the widget to one topic wants).
-  const listCapable = !nodeId;
   // The "Diskussionsforum" heading (see below) must always be able to reach the Themen overview,
   // even when the host pinned a fixed nodeId - overrides both the `?thema=` param and the nodeId
   // prop until a thema is (re-)selected, at which point the effect below clears it again.
@@ -213,7 +209,7 @@ export function ForumThreadView({ nodeId }: { nodeId?: string }) {
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
       {showNewThema && <NewThemaModal onCreated={handleThemaCreated} onCancel={() => setShowNewThema(false)} />}
 
-      {listCapable && (
+      {!rootId && (
         <button
           type="button"
           onClick={openNewThema}

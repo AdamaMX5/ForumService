@@ -11,7 +11,7 @@ const EDGE_ACCENT: Record<EdgeTyp, string> = {
   differenzierung: 'border-l-4 border-l-[var(--forum-differenzierung)]',
 };
 
-const CHILD_TYPES: EdgeTyp[] = ['pro', 'contra', 'differenzierung'];
+const CHILD_TYPES: EdgeTyp[] = ['pro', 'differenzierung', 'contra'];
 
 function referenzLabel(node: ReferenzListItem): string {
   return node.texte.neutral?.text ?? node.texte.pro?.text ?? node.texte.contra?.text ?? '(ohne Titel)';
@@ -84,7 +84,7 @@ export function ArgumentNode({ node }: { node: ForumChildNode }) {
   return (
     <div
       ref={elementRef}
-      className={`rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900 ${
+      className={`forum-card rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900 ${
         node.edge_typ ? EDGE_ACCENT[node.edge_typ] : ''
       } ${isFocused ? 'ring-2 ring-yellow-400' : ''}`}
     >

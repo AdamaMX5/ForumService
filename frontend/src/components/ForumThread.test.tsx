@@ -49,6 +49,9 @@ describe('ForumThread', () => {
     await user.click(homeHeading);
 
     expect(await screen.findByRole('heading', { name: 'Themen' })).toBeInTheDocument();
+    // The "+" create-thema button must be reachable from the overview too, even though this
+    // embed was given a fixed nodeId (spec: "keine Moeglichkeit ein weiteres Thema anzufangen").
+    expect(screen.getByRole('button', { name: 'Neues Thema erstellen' })).toBeInTheDocument();
   });
 
   it('shows an error message when the root node fails to load', async () => {

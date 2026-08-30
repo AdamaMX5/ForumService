@@ -29,3 +29,23 @@
     flex-direction: row;
   }
 }
+
+/* Backstop for thema-list entries and argument cards (`.forum-card`): this widget renders into
+   light DOM (no Shadow DOM - see webcomponent.ts), so a host page's own CSS can in principle beat
+   a single-class Tailwind utility like `.bg-white`/`.dark\:bg-gray-900` on specificity or source
+   order (e.g. a TYPO3/Bootstrap theme's own background utilities, some of which ship with
+   `!important`). The scoped two-class selector alone only beats plain single-class/element host
+   rules, not `!important` ones - hence `!important` here too, deliberately, as this rule's entire
+   job is fighting unknown external CSS. Applied symmetrically in both modes even though the light
+   backstop is currently unneeded for the reported symptom, since the same bleed risk applies to
+   `.bg-white` and just happens to be invisible when a colliding host style is *also* white/light.
+   Keep in sync with the `bg-white`/`dark:bg-gray-900` values used alongside them. */
+.forum-thread .forum-card {
+  background-color: #fff !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .forum-thread .forum-card {
+    background-color: #111827 !important;
+  }
+}

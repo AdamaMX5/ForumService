@@ -41,12 +41,16 @@ CORS für den jeweiligen Dev-Origin am Zielservice temporär erlauben.
 
 `nodeId` (React) bzw. `node-id` (Web Component) ist optional:
 
-- **Gesetzt** - zeigt direkt die angegebene Wurzel-Diskussion, ohne Einstieg zurueck zu einer
-  Uebersicht (z.B. FreiSchule bindet ein bestimmtes Unterrichtsthema fest ein).
+- **Gesetzt** - zeigt direkt die angegebene Wurzel-Diskussion, ohne "+"-Button zum Anlegen neuer
+  Themen (z.B. FreiSchule bindet ein bestimmtes Unterrichtsthema fest ein).
 - **Weggelassen** - zeigt zunaechst die allgemeine Themenuebersicht (alle Themen, sortierbar) samt
   "+"-Button zum Anlegen eines neuen Themas. Auswahl eines Themas wechselt in die Diskussionsansicht
-  und steuert sich ab dann ueber den `?thema=`-Deep-Link-Parameter (siehe unten). Die Ueberschrift
-  "Diskussionsforum" ist in diesem Modus klickbar und fuehrt jederzeit zurueck zur Themenuebersicht.
+  und steuert sich ab dann ueber den `?thema=`-Deep-Link-Parameter (siehe unten).
+
+Die Ueberschrift "Diskussionsforum" wird in **beiden** Faellen immer angezeigt und ist immer
+klickbar - sie fuehrt jederzeit zur allgemeinen Themenuebersicht, auch wenn `nodeId`/`node-id` fest
+vorgegeben wurde. Der Weg zurueck zur Gesamtuebersicht des Forums bleibt so auch aus einer fest
+eingebundenen Einzeldiskussion heraus immer erreichbar.
 
 ## Nutzung als React-Bibliothek
 

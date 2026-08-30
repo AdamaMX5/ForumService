@@ -35,6 +35,22 @@ describe('ForumThread', () => {
     expect(screen.getByText('Differenzierung')).toBeInTheDocument();
   });
 
+  it('shows a clickable "Diskussionsforum" home heading even with a fixed nodeId, and it always reaches the Themen overview', async () => {
+    const user = userEvent.setup();
+    renderThread('t1');
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Sollte auf deutschen Autobahnen ein generelles Tempolimit von 130 km/h gelten?')
+      ).toBeInTheDocument()
+    );
+
+    const homeHeading = screen.getByRole('button', { name: 'Diskussionsforum' });
+    await user.click(homeHeading);
+
+    expect(await screen.findByRole('heading', { name: 'Themen' })).toBeInTheDocument();
+  });
+
   it('shows an error message when the root node fails to load', async () => {
     renderThread('does-not-exist');
 

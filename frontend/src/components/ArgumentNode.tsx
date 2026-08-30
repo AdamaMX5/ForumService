@@ -142,7 +142,7 @@ export function ArgumentNode({ node }: { node: ForumChildNode }) {
       )}
 
       {expanded && (
-        <div className="mt-3 flex flex-col gap-3 border-t border-gray-100 pt-3 dark:border-gray-800 sm:flex-row">
+        <div className="forum-columns mt-3 border-t border-gray-100 pt-3 dark:border-gray-800">
           {CHILD_TYPES.map((typ) => (
             <ArgumentColumn key={typ} parentId={node.id} edgeTyp={typ} />
           ))}

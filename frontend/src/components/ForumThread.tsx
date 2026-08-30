@@ -19,7 +19,9 @@ export interface ForumThreadProps {
    * Root thema (or argument) node id to display. Overridden by a `?thema=` deep-link param if
    * present. Omit entirely to embed ForumThread without picking a topic upfront - it then shows
    * a start page listing every Thema (with a "+" button to create the first/a new one); selecting
-   * one drives the view via the `?thema=` deep-link param from then on.
+   * one drives the view via the `?thema=` deep-link param from then on. The "Diskussionsforum"
+   * heading is always shown and always navigates back to the Themen overview, even when a fixed
+   * nodeId is given (the "+" create-thema button stays hidden in that case, though).
    */
   nodeId?: string;
   /**
@@ -45,10 +47,15 @@ export function ForumThread({ nodeId, externalAuth, forumApiBaseUrl }: ForumThre
 export function ForumThreadView({ nodeId }: { nodeId?: string }) {
   const { api, accessToken } = useForumAuth();
   const [params, setParams] = useDeepLinkParams();
-  const rootId = params.thema || nodeId || null;
-  // Whether this embedding can ever show the Themen start page / "+" create button - only true
-  // when the host didn't pin a fixed nodeId, so there's an actual "list" to fall back/return to.
+  // Whether this embedding can show the "+" create-thema button - only true when the host didn't
+  // pin a fixed nodeId (creating brand-new top-level themen from inside a single fixed-topic
+  // embed isn't something a host that deliberately scoped the widget to one topic wants).
   const listCapable = !nodeId;
+  // The "Diskussionsforum" heading (see below) must always be able to reach the Themen overview,
+  // even when the host pinned a fixed nodeId - overrides both the `?thema=` param and the nodeId
+  // prop until a thema is (re-)selected, at which point the effect below clears it again.
+  const [showOverview, setShowOverview] = useState(false);
+  const rootId = showOverview ? null : params.thema || nodeId || null;
 
   const [root, setRoot] = useState<ForumNode | null>(null);
   const [isLoadingRoot, setIsLoadingRoot] = useState(() => !!rootId);
@@ -59,6 +66,10 @@ export function ForumThreadView({ nodeId }: { nodeId?: string }) {
   const [showLogin, setShowLogin] = useState(false);
   const [showNewThema, setShowNewThema] = useState(false);
   const [pathToFocusIds, setPathToFocusIds] = useState<Set<string>>(EMPTY_PATH);
+
+  useEffect(() => {
+    if (params.thema) setShowOverview(false);
+  }, [params.thema]);
 
   useEffect(() => {
     if (!rootId) {
@@ -131,6 +142,7 @@ export function ForumThreadView({ nodeId }: { nodeId?: string }) {
   }
 
   function backToThemenliste() {
+    setShowOverview(true);
     setParams({ thema: null, fokus: null, kommentare: null });
     setCommentsNodeId(null);
   }
@@ -173,13 +185,11 @@ export function ForumThreadView({ nodeId }: { nodeId?: string }) {
 
   return (
     <div className="forum-thread relative w-full space-y-4 p-4 text-gray-900 dark:text-gray-50">
-      {listCapable && (
-        <h1 className="text-xl font-bold">
-          <button type="button" onClick={backToThemenliste} className="hover:underline">
-            Diskussionsforum
-          </button>
-        </h1>
-      )}
+      <h1 className="text-xl font-bold">
+        <button type="button" onClick={backToThemenliste} className="hover:underline">
+          Diskussionsforum
+        </button>
+      </h1>
 
       {!rootId && <ThemenListe onSelect={selectThema} />}
 
@@ -187,14 +197,16 @@ export function ForumThreadView({ nodeId }: { nodeId?: string }) {
       {rootId && rootError && <p className="text-sm text-red-600">{rootError}</p>}
 
       {rootId && root && (
-        <ForumUIProvider value={ui}>
-          <ThreadHeader root={root} likesCount={likesCount} onLikesCountChange={setLikesCount} />
-          <div className="flex flex-col gap-3 sm:flex-row">
-            {CHILD_TYPES.map((typ) => (
-              <ArgumentColumn key={typ} parentId={root.id} edgeTyp={typ} />
-            ))}
-          </div>
-        </ForumUIProvider>
+        <div className="forum-thread-body">
+          <ForumUIProvider value={ui}>
+            <ThreadHeader root={root} likesCount={likesCount} onLikesCountChange={setLikesCount} />
+            <div className="forum-columns">
+              {CHILD_TYPES.map((typ) => (
+                <ArgumentColumn key={typ} parentId={root.id} edgeTyp={typ} />
+              ))}
+            </div>
+          </ForumUIProvider>
+        </div>
       )}
 
       {commentsNodeId && <CommentsModal nodeId={commentsNodeId} onClose={closeComments} />}

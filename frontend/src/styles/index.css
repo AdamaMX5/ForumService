@@ -7,3 +7,25 @@
   --forum-contra: #dc2626;
   --forum-differenzierung: #2563eb;
 }
+
+/* Establishes a size-query container scoped to the thread body only (not `.forum-thread` itself,
+   which also hosts the "+" new-thema button - `position: fixed` descendants of a container-type
+   ancestor position relative to that container instead of the viewport, which would break it). */
+.forum-thread-body {
+  container-type: inline-size;
+}
+
+/* Pro/Contra/Differenzierung columns respond to the width actually available to the widget
+   itself (container query), not the browser viewport (media query) - the same widget can be
+   embedded full-width on one host page and in a narrow sidebar on another. */
+.forum-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@container (min-width: 40rem) {
+  .forum-columns {
+    flex-direction: row;
+  }
+}

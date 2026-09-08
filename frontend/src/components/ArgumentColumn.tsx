@@ -65,7 +65,7 @@ export function ArgumentColumn({ parentId, edgeTyp }: { parentId: string; edgeTy
       <ul className="space-y-2">
         {items.map((node) => (
           <li key={node.id}>
-            <ArgumentNode node={node} />
+            <ArgumentNode node={node} onDeleted={reload} />
           </li>
         ))}
       </ul>

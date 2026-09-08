@@ -6,6 +6,7 @@ import type {
   Paginated,
   ReferenzEdge,
   ReferenzListItem,
+  Sichtbarkeit,
   SortMode,
 } from './types';
 
@@ -154,6 +155,26 @@ export function createForumApi(baseUrl: string, auth: ForumApiAuthAdapter) {
     suche(q: string, limit?: number): Promise<{ data: ForumNode[] }> {
       const qs = toQueryString({ q, limit });
       return request(`/suche${qs}`);
+    },
+
+    // --- Moderation (FORUM_MODERATOR/ADMIN) ---
+
+    updateNodeText(nodeId: string, texte: { neutral?: string; pro?: string; contra?: string }): Promise<ForumNode> {
+      return request(`/nodes/${nodeId}/text`, { method: 'PUT', body: JSON.stringify(texte) });
+    },
+
+    setSichtbarkeit(nodeId: string, sichtbarkeit: Sichtbarkeit): Promise<ForumNode> {
+      return request(`/nodes/${nodeId}/sichtbarkeit`, {
+        method: 'PUT',
+        body: JSON.stringify({ sichtbarkeit }),
+      });
+    },
+
+    deleteNode(nodeId: string, grund?: string): Promise<void> {
+      return request(`/nodes/${nodeId}`, {
+        method: 'DELETE',
+        body: grund ? JSON.stringify({ grund }) : undefined,
+      });
     },
   };
 }

@@ -195,7 +195,13 @@ export function ForumThreadView({ nodeId }: { nodeId?: string }) {
       {rootId && root && (
         <div className="forum-thread-body">
           <ForumUIProvider value={ui}>
-            <ThreadHeader root={root} likesCount={likesCount} onLikesCountChange={setLikesCount} />
+            <ThreadHeader
+              root={root}
+              likesCount={likesCount}
+              onLikesCountChange={setLikesCount}
+              onRootUpdated={setRoot}
+              onRootDeleted={backToThemenliste}
+            />
             <div className="forum-columns">
               {CHILD_TYPES.map((typ) => (
                 <ArgumentColumn key={typ} parentId={root.id} edgeTyp={typ} />

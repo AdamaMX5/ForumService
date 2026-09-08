@@ -11,7 +11,13 @@ import type { EdgeTyp, ForumChildNode } from '../api/types';
 
 const FORUM_BASE_URL = 'http://localhost:3000';
 
-function renderNode(nodeId: string, edgeTyp: EdgeTyp = 'contra') {
+function makeJwt(roles: string[]): string {
+  const b64url = (obj: unknown) =>
+    btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${b64url({ alg: 'none', typ: 'JWT' })}.${b64url({ sub: 'mod-1', roles, exp: Math.floor(Date.now() / 1000) + 900 })}.sig`;
+}
+
+function renderNode(nodeId: string, edgeTyp: EdgeTyp = 'contra', accessToken: string | null = null) {
   const node: ForumChildNode = { ...mockNodes.get(nodeId)!, edge_typ: edgeTyp };
   const ui: ForumUIContextValue = {
     sort: 'beste',
@@ -21,13 +27,14 @@ function renderNode(nodeId: string, edgeTyp: EdgeTyp = 'contra') {
     onOpenComments: vi.fn(),
     onRequireAuth: vi.fn(),
   };
-  return render(
-    <ForumAuthProvider forumApiBaseUrl={FORUM_BASE_URL} externalAuth={{ accessToken: null }}>
+  const utils = render(
+    <ForumAuthProvider forumApiBaseUrl={FORUM_BASE_URL} externalAuth={{ accessToken }}>
       <ForumUIProvider value={ui}>
         <ArgumentNode node={node} />
       </ForumUIProvider>
     </ForumAuthProvider>
   );
+  return { ...utils, node, ui };
 }
 
 describe('ArgumentNode - Referenzen anzeigen', () => {
@@ -91,5 +98,43 @@ describe('ArgumentNode - Referenzen anzeigen', () => {
     await user.click(screen.getByRole('button', { name: 'Referenzen anzeigen' }));
     expect(screen.getByText('Keine Referenzen.')).toBeInTheDocument();
     expect(hits).toBe(1); // cached client-side - no second request
+  });
+});
+
+describe('ArgumentNode - moderation text-override staleness', () => {
+  it('clears a locally-edited text override once the parent hands it a genuinely fresh node.texte', async () => {
+    // Regression test: ArgumentColumn keeps the same ArgumentNode instance alive across a reload
+    // (list items are keyed by node.id, which doesn't change) - a moderator's local edit must not
+    // permanently shadow a later, real server refetch (e.g. triggered by a sibling being
+    // added/deleted in the same column).
+    const user = userEvent.setup();
+    const token = makeJwt(['FORUM_MODERATOR']);
+    const { rerender, node, ui } = renderNode('a2', 'contra', token);
+
+    await user.click(screen.getByRole('button', { name: 'Text bearbeiten' }));
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    await user.clear(textarea);
+    await user.type(textarea, 'Lokal bearbeitete Fassung');
+    await user.click(screen.getByRole('button', { name: 'Neue Version speichern' }));
+
+    await waitFor(() => expect(screen.getByText('Lokal bearbeitete Fassung')).toBeInTheDocument());
+
+    const freshNode: ForumChildNode = {
+      ...node,
+      texte: {
+        ...node.texte,
+        neutral: { version: 5, text: 'Serverseitig aktualisierte Fassung', autor_id: 'other-mod', datum: new Date().toISOString() },
+      },
+    };
+    rerender(
+      <ForumAuthProvider forumApiBaseUrl={FORUM_BASE_URL} externalAuth={{ accessToken: token }}>
+        <ForumUIProvider value={ui}>
+          <ArgumentNode node={freshNode} />
+        </ForumUIProvider>
+      </ForumAuthProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText('Serverseitig aktualisierte Fassung')).toBeInTheDocument());
+    expect(screen.queryByText('Lokal bearbeitete Fassung')).not.toBeInTheDocument();
   });
 });

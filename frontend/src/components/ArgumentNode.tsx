@@ -3,7 +3,9 @@ import { useForumAuth } from '../auth/AuthContext';
 import { useForumUI } from './ForumUIContext';
 import { LikeButton } from './LikeButton';
 import { ArgumentColumn } from './ArgumentColumn';
-import type { EdgeTyp, ForumChildNode, ReferenzListItem } from '../api/types';
+import { ModerationControls } from './ModerationControls';
+import { primaryText } from '../utils/texte';
+import type { EdgeTyp, ForumChildNode, ForumNode, ReferenzListItem } from '../api/types';
 
 const EDGE_ACCENT: Record<EdgeTyp, string> = {
   pro: 'border-l-4 border-l-[var(--forum-pro)]',
@@ -14,10 +16,10 @@ const EDGE_ACCENT: Record<EdgeTyp, string> = {
 const CHILD_TYPES: EdgeTyp[] = ['pro', 'differenzierung', 'contra'];
 
 function referenzLabel(node: ReferenzListItem): string {
-  return node.texte.neutral?.text ?? node.texte.pro?.text ?? node.texte.contra?.text ?? '(ohne Titel)';
+  return primaryText(node.texte) || '(ohne Titel)';
 }
 
-export function ArgumentNode({ node }: { node: ForumChildNode }) {
+export function ArgumentNode({ node, onDeleted }: { node: ForumChildNode; onDeleted?: () => void }) {
   const { accessToken, api } = useForumAuth();
   const { focusNodeId, pathToFocusIds, onOpenComments, onRequireAuth } = useForumUI();
   const [expanded, setExpanded] = useState(() => pathToFocusIds.has(node.id));
@@ -28,6 +30,15 @@ export function ArgumentNode({ node }: { node: ForumChildNode }) {
   const [showReferenzen, setShowReferenzen] = useState(false);
   const [referenzen, setReferenzen] = useState<ReferenzListItem[] | null>(null);
   const [referenzenError, setReferenzenError] = useState<string | null>(null);
+  // Reflects a moderator's "new text version" save without waiting for the column to reload -
+  // `node` itself comes from ArgumentColumn's paginated list and is otherwise read-only here.
+  // Reset whenever ArgumentColumn hands us a genuinely new `node.texte` (e.g. a reload triggered
+  // by a sibling being added/deleted, or a sort change) - otherwise a stale local edit would
+  // permanently shadow fresher server state fetched afterwards.
+  const [texteOverride, setTexteOverride] = useState<ForumNode['texte'] | null>(null);
+  useEffect(() => {
+    setTexteOverride(null);
+  }, [node.texte]);
   const elementRef = useRef<HTMLDivElement>(null);
 
   const isFocused = focusNodeId !== null && focusNodeId === node.id;
@@ -42,7 +53,8 @@ export function ArgumentNode({ node }: { node: ForumChildNode }) {
     if (pathToFocusIds.has(node.id)) setExpanded(true);
   }, [pathToFocusIds, node.id]);
 
-  const displayText = node.texte.neutral?.text ?? node.texte.pro?.text ?? node.texte.contra?.text ?? '';
+  const texte = texteOverride ?? node.texte;
+  const displayText = primaryText(texte);
 
   async function submitReference(e: FormEvent) {
     e.preventDefault();
@@ -127,6 +139,12 @@ export function ArgumentNode({ node }: { node: ForumChildNode }) {
         </form>
       )}
       {referenceStatus && <p className="mt-1 text-xs text-gray-500">{referenceStatus}</p>}
+
+      <ModerationControls
+        node={{ ...node, texte }}
+        onTextUpdated={(updated) => setTexteOverride(updated.texte)}
+        onDeleted={() => onDeleted?.()}
+      />
 
       {referenzenError && <p className="mt-1 text-xs text-red-600">{referenzenError}</p>}
       {showReferenzen && referenzen && (

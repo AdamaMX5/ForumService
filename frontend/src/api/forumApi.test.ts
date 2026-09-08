@@ -141,6 +141,46 @@ describe('forumApi', () => {
 
       expect(lastRequest().url).toBe(`${BASE_URL}/suche?q=tempolimit&limit=5`);
     });
+
+    it('updateNodeText PUTs the provided columns as JSON body', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ id: 'n1' }));
+      const api = createForumApi(BASE_URL, auth);
+
+      await api.updateNodeText('n1', { neutral: 'Neue Version' });
+
+      const { url, init } = lastRequest();
+      expect(url).toBe(`${BASE_URL}/nodes/n1/text`);
+      expect(init.method).toBe('PUT');
+      expect(JSON.parse(init.body as string)).toEqual({ neutral: 'Neue Version' });
+    });
+
+    it('setSichtbarkeit PUTs { sichtbarkeit }', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ id: 'n1', sichtbarkeit: 'privat' }));
+      const api = createForumApi(BASE_URL, auth);
+
+      await api.setSichtbarkeit('n1', 'privat');
+
+      const { url, init } = lastRequest();
+      expect(url).toBe(`${BASE_URL}/nodes/n1/sichtbarkeit`);
+      expect(init.method).toBe('PUT');
+      expect(JSON.parse(init.body as string)).toEqual({ sichtbarkeit: 'privat' });
+    });
+
+    it('deleteNode DELETEs with a { grund } body when given, and no body otherwise', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+      const api = createForumApi(BASE_URL, auth);
+
+      await api.deleteNode('n1', 'Spam');
+
+      const { url, init } = lastRequest();
+      expect(url).toBe(`${BASE_URL}/nodes/n1`);
+      expect(init.method).toBe('DELETE');
+      expect(JSON.parse(init.body as string)).toEqual({ grund: 'Spam' });
+
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+      await api.deleteNode('n2');
+      expect(lastRequest().init.body).toBeUndefined();
+    });
   });
 
   describe('error mapping', () => {

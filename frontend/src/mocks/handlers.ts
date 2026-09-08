@@ -285,6 +285,46 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
+  // --- Moderation mocks (real role enforcement happens server-side - see src/routes/nodes.js;
+  // the mock trusts the caller like the rest of this file, UI-level gating is what's under test) ---
+
+  http.put(forumUrl('/nodes/:id/text'), async ({ request, params }) => {
+    const node = mockNodes.get(params.id as string);
+    if (!node || node.soft_deleted) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+    const body = (await request.json()) as { neutral?: string; pro?: string; contra?: string };
+    (['neutral', 'pro', 'contra'] as const).forEach((col) => {
+      const value = body[col];
+      if (typeof value === 'string' && value.trim().length > 0) {
+        const nextVersion = (node.texte[col]?.version ?? 0) + 1;
+        node.texte[col] = { version: nextVersion, text: value.trim(), autor_id: 'mock-user-1', datum: new Date().toISOString() };
+      }
+    });
+    if (!node.bearbeitet_von.includes('mock-user-1')) node.bearbeitet_von.push('mock-user-1');
+    return HttpResponse.json(withLikedByMe(node, request));
+  }),
+
+  http.put(forumUrl('/nodes/:id/sichtbarkeit'), async ({ request, params }) => {
+    const node = mockNodes.get(params.id as string);
+    if (!node) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+    if (node.typ !== 'thema') {
+      return HttpResponse.json({ error: 'sichtbarkeit only applies to typ "thema"' }, { status: 400 });
+    }
+    const { sichtbarkeit } = (await request.json()) as { sichtbarkeit: 'oeffentlich' | 'privat' };
+    node.sichtbarkeit = sichtbarkeit;
+    return HttpResponse.json(withLikedByMe(node, request));
+  }),
+
+  http.delete(forumUrl('/nodes/:id'), async ({ request, params }) => {
+    const node = mockNodes.get(params.id as string);
+    if (!node || node.soft_deleted) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+    const text = await request.text();
+    const body = text ? (JSON.parse(text) as { grund?: string }) : {};
+    node.soft_deleted = true;
+    node.soft_deleted_grund = body.grund;
+    node.soft_deleted_von = 'mock-user-1';
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   // Keep this LAST among /nodes/:id routes - it's the catch-all single-node getter.
   http.get(forumUrl('/nodes/:id'), ({ request, params }) => {
     const node = mockNodes.get(params.id as string);

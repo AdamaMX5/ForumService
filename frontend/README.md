@@ -102,6 +102,26 @@ Folgt dem URL-Contract aus Spec Abschnitt 12: `?thema=<id>&fokus=<id>&kommentare
   ausgehenden Referenzen dieses Nodes auflistet - zusaetzlich zum bestehenden
   "Referenzieren"-Button zum Anlegen neuer Referenzen (`POST /nodes/:id/referenz`).
 
+## Moderation (FORUM_MODERATOR/ADMIN)
+
+Ein "Moderation"-Block erscheint unterhalb jedes Nodes (Thema-Header und jedes `ArgumentNode`),
+sobald `user.roles` aus dem dekodierten JWT (`src/auth/roles.ts`) `FORUM_MODERATOR` oder `ADMIN`
+enthaelt - fuer alle anderen Aufrufer bleibt er unsichtbar. Die eigentliche Autorisierung liegt
+weiterhin allein beim Backend (`requireRole(...)` in `src/routes/nodes.js`); die Client-Rolle
+steuert nur, welche Buttons ueberhaupt gerendert werden.
+
+- **Text bearbeiten** (`PUT /nodes/:id/text`, Mod/Admin) - oeffnet `EditTextModal` mit dem
+  aktuell angezeigten Text vorausgefuellt, speichert eine neue Textversion.
+- **Privat/Oeffentlich schalten** (`PUT /nodes/:id/sichtbarkeit`, nur Admin, nur `typ: "thema"`).
+- **Loeschen** (`DELETE /nodes/:id`, Mod/Admin) - Soft-Delete mit optionalem Grund; nach Erfolg
+  verschwindet der Node aus der jeweiligen Liste (Spalten-Reload bzw. Zurueck zur Themenuebersicht
+  beim geloeschten Thema-Root).
+
+**Kein Restore/Undelete:** Das Backend hat aktuell keinen Undelete-Endpunkt, und ein
+soft-geloeschter Node liefert fuer jeden Aufrufer (auch Mod/Admin) `404` auf jedem weiteren
+Abruf - er ist ab dem Loeschen also serverseitig nicht mehr erreichbar. Eine Restore-UI liesse
+sich daher ohne einen neuen Backend-Endpunkt nicht sinnvoll bauen.
+
 ## Struktur
 
 ```

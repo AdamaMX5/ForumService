@@ -331,4 +331,13 @@ export const handlers = [
     if (!node || node.soft_deleted) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
     return HttpResponse.json(withLikedByMe(node, request));
   }),
+
+  // --- GitService mock (Idee/Bug melden, s. ReportIssueModal) ---
+  http.post('*/issue', async ({ request }) => {
+    const { title } = (await request.json()) as { title: string };
+    return HttpResponse.json(
+      { number: 999, url: `https://git.freischule.info/mock/issues/999-${encodeURIComponent(title)}` },
+      { status: 201 }
+    );
+  }),
 ];

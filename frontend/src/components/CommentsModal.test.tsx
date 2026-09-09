@@ -93,6 +93,35 @@ describe('CommentsModal', () => {
     expect(screen.queryByRole('button', { name: 'Mehr laden' })).not.toBeInTheDocument();
   });
 
+  it('opens the ReportIssueModal via the 💡-Icon when authenticated', async () => {
+    const user = userEvent.setup();
+    renderModal('t1');
+    await waitFor(() => expect(screen.getByText('Danke fuer die sachliche Aufbereitung!')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Idee oder Bug melden' }));
+
+    expect(screen.getByRole('dialog', { name: 'Idee oder Bug melden' })).toBeInTheDocument();
+  });
+
+  it('requires login before opening the ReportIssueModal', async () => {
+    const user = userEvent.setup();
+    let requireAuthCalled = false;
+    const onRequireAuth = () => {
+      requireAuthCalled = true;
+    };
+    render(
+      <ForumAuthProvider forumApiBaseUrl={FORUM_BASE_URL} externalAuth={{ accessToken: null }}>
+        <CommentsModal nodeId="t1" onClose={() => {}} onRequireAuth={onRequireAuth} />
+      </ForumAuthProvider>
+    );
+    await waitFor(() => expect(screen.getByText('Danke fuer die sachliche Aufbereitung!')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Idee oder Bug melden' }));
+
+    expect(requireAuthCalled).toBe(true);
+    expect(screen.queryByRole('dialog', { name: 'Idee oder Bug melden' })).not.toBeInTheDocument();
+  });
+
   it('replying to a comment tags the outgoing post with parent_comment_id', async () => {
     let capturedBody: { text: string; parent_comment_id?: string | null } | null = null;
     server.use(

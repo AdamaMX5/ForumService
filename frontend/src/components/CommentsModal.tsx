@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useForumAuth } from '../auth/AuthContext';
 import { useCursorPaginated } from '../hooks/useCursorPaginated';
 import { CommentListItem } from './CommentListItem';
+import { ReportIssueModal } from './ReportIssueModal';
 import type { ForumComment } from '../api/types';
 
 // Popup comment section for a single thema/argument node (spec section 10: comments are
@@ -10,12 +11,25 @@ export function CommentsModal({
   nodeId,
   onClose,
   onCommentPosted,
+  onRequireAuth,
 }: {
   nodeId: string;
   onClose: () => void;
   onCommentPosted?: () => void;
+  /** Required to gate the 💡-Icon (Issue #7 - Idee/Bug melden) behind login, since GitService's
+   * POST /issue needs a JWT. Optional so existing call sites/tests without the feature keep working. */
+  onRequireAuth?: () => void;
 }) {
   const { accessToken, api } = useForumAuth();
+  const [showReportIssue, setShowReportIssue] = useState(false);
+
+  function openReportIssue() {
+    if (!accessToken) {
+      onRequireAuth?.();
+      return;
+    }
+    setShowReportIssue(true);
+  }
   const fetchPage = useCallback((cursor: string | null) => api.getKommentare(nodeId, cursor), [api, nodeId]);
   const { items, isLoading, isLoadingMore, error, hasMore, loadMore, reload } = useCursorPaginated<ForumComment>({
     fetchPage,
@@ -59,10 +73,23 @@ export function CommentsModal({
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">Kommentare</h2>
-          <button type="button" onClick={onClose} aria-label="Schliessen" className="text-gray-500 hover:text-gray-800">
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={openReportIssue}
+              aria-label="Idee oder Bug melden"
+              title="Idee oder Bug melden"
+              className="text-gray-500 hover:text-yellow-500"
+            >
+              💡
+            </button>
+            <button type="button" onClick={onClose} aria-label="Schliessen" className="text-gray-500 hover:text-gray-800">
+              ✕
+            </button>
+          </div>
         </div>
+
+        {showReportIssue && <ReportIssueModal onClose={() => setShowReportIssue(false)} />}
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {isLoading && <p className="text-sm text-gray-500">Lade Kommentare…</p>}

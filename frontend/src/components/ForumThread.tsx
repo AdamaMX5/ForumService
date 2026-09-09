@@ -234,7 +234,9 @@ export function ForumThreadView({ nodeId, theme = 'auto' }: { nodeId?: string; t
           </div>
         )}
 
-        {commentsNodeId && <CommentsModal nodeId={commentsNodeId} onClose={closeComments} />}
+        {commentsNodeId && (
+          <CommentsModal nodeId={commentsNodeId} onClose={closeComments} onRequireAuth={requireAuth} />
+        )}
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         {showNewThema && <NewThemaModal onCreated={handleThemaCreated} onCancel={() => setShowNewThema(false)} />}
 

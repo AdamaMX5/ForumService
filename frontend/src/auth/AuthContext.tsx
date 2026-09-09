@@ -30,6 +30,10 @@ interface ForumAuthContextValue {
   register: (email: string, password: string, repassword: string) => Promise<void>;
   logout: () => Promise<void>;
   api: ForumApi;
+  /** Resolves with a fresh access token, or throws if no session could be established - exposed
+   * so other API clients (e.g. gitServiceApi) can retry a 401 the same way forumApi does
+   * internally. */
+  refreshAccessToken: () => Promise<string>;
 }
 
 const ForumAuthContext = createContext<ForumAuthContextValue | null>(null);
@@ -173,6 +177,7 @@ export function ForumAuthProvider({ children, externalAuth, forumApiBaseUrl }: F
     register,
     logout,
     api,
+    refreshAccessToken,
   };
 
   return <ForumAuthContext.Provider value={value}>{children}</ForumAuthContext.Provider>;

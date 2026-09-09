@@ -127,6 +127,21 @@ gegen den rotierenden Refresh-Token des AuthService laufen:
 Mehrere `<ForumThread>`-Instanzen auf einer Seite können sich einen Login teilen, indem man selbst
 einen `<ForumAuthProvider>` außenrum legt und `<ForumThreadView>` (statt `<ForumThread>`) verwendet.
 
+Dark Mode folgt standardmäßig `prefers-color-scheme` (`theme="auto"`, Default). Verwaltet die
+Host-App ihr Dark-Theme stattdessen selbst über eine Klasse (z. B. `<html class="dark">`), greift
+das ohne weiteres Zutun, da Tailwinds `class`-Strategie hier jeden Vorfahren mit `.dark` matcht.
+Eine Host-App, die ihren Theme-State aktiv selbst trackt, kann ihn zusätzlich explizit
+durchreichen — analog zu `externalAuth` für den Login-State:
+
+```tsx
+<ForumThread nodeId="<themaId>" theme={hostIsDarkMode ? 'dark' : 'light'} />
+```
+
+`theme` ersetzt dabei nur ForumThreads eigene OS-Präferenz-Erkennung, nicht die CSS-Kaskade —
+`theme="light"` kann eine `.dark`-Klasse auf einem Vorfahren nicht übersteuern; ein Host, der
+ForumThread bewusst anders themen will als den Rest der Seite, muss es außerhalb dieses
+`.dark`-Scopes einbinden.
+
 ### TYPO3 (und generisches HTML/PHP)
 
 Web-Component-Build erzeugen (Env-Vars `VITE_FORUM_API_URL`/`VITE_AUTH_SERVICE_URL` werden zur
@@ -148,9 +163,10 @@ Content-Element einbinden:
 <forum-thread node-id="<themaId>"></forum-thread>
 ```
 
-`node-id` ist das einzige Attribut, das das Custom Element kennt, und optional — ohne `node-id`
-(und ohne `?thema=`-Deep-Link-Param) zeigt `<forum-thread>` dieselbe Themen-Startseite samt
-"+"-Button wie die React-Variante (s.o.):
+`node-id` und `theme` (`"light"` | `"dark"` | `"auto"`, Default `"auto"`) sind die einzigen
+Attribute, die das Custom Element kennt, beide optional — ohne `node-id` (und ohne
+`?thema=`-Deep-Link-Param) zeigt `<forum-thread>` dieselbe Themen-Startseite samt "+"-Button wie
+die React-Variante (s.o.):
 
 ```html
 <forum-thread></forum-thread>

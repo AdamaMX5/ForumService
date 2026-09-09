@@ -85,6 +85,36 @@ einen `<ForumAuthProvider>` aussenrum legt und `<ForumThreadView>` (statt `<Foru
 Hier laeuft immer der volle eigenstaendige Login/Register-Flow (kein `externalAuth` moeglich, da
 kein React-Host-Kontext existiert, durch den ein Token gereicht werden koennte).
 
+## Dark Mode / `theme`-Prop
+
+`darkMode` in `tailwind.config.js` steht auf `'class'`, nicht auf Tailwinds Default `'media'` - eine
+Host-App, die ihr eigenes Dark-Theme per Klasse umschaltet (z.B. `<html class="dark">`), statt sich
+rein auf die OS-Einstellung `prefers-color-scheme` zu verlassen, wurde von `'media'` schlicht
+ignoriert (ForumService Issue #6: die Themen-Startseite blieb weiss, obwohl das Dark-Theme der
+Host-App aktiv war). Tailwinds `'class'`-Strategie matcht **jeden** Vorfahren mit `.dark`, nicht nur
+einen direkten Wrapper - ein bereits vorhandener Host-Toggle auf `<html>`/`<body>` greift also ohne
+weiteres Zutun.
+
+Ohne jede Host-Steuerung bleibt das bisherige Verhalten erhalten: `<ForumThread>` erkennt
+`prefers-color-scheme` selbst (per `useResolvedDarkMode`, siehe `src/hooks/`) und setzt/entfernt
+dafuer eine eigene `dark`-Klasse auf einem Wrapper um sich selbst. Ein Host, der sein Theme aktiv
+selbst trackt, kann es explizit durchreichen - analog zu `externalAuth` fuer den Login-State:
+
+```tsx
+<ForumThread nodeId="<themaId>" theme={hostIsDarkMode ? 'dark' : 'light'} />
+```
+
+```html
+<forum-thread node-id="<themaId>" theme="dark"></forum-thread>
+```
+
+`theme` ist optional (Default `'auto'` = OS-Praeferenz) und akzeptiert `'light' | 'dark' | 'auto'`.
+
+**Grenze:** `theme` ersetzt nur ForumThreads eigene OS-Praeferenz-Erkennung, nicht die CSS-Kaskade -
+`theme="light"` kann eine `.dark`-Klasse auf einem Vorfahren, in den ForumThread eingebettet ist,
+nicht "uebersteuern" (reine CSS-Vererbung). Ein Host, der ForumThread bewusst anders themen will als
+den Rest der Seite, muss es ausserhalb dieses `.dark`-Scopes einbinden.
+
 ## Deep-Linking
 
 Folgt dem URL-Contract aus Spec Abschnitt 12: `?thema=<id>&fokus=<id>&kommentare=<id>`.

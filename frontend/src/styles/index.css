@@ -39,13 +39,20 @@
    job is fighting unknown external CSS. Applied symmetrically in both modes even though the light
    backstop is currently unneeded for the reported symptom, since the same bleed risk applies to
    `.bg-white` and just happens to be invisible when a colliding host style is *also* white/light.
-   Keep in sync with the `bg-white`/`dark:bg-gray-900` values used alongside them. */
+   Keep in sync with the `bg-white`/`dark:bg-gray-900` values used alongside them.
+
+   The dark variant is gated on a `.dark` ancestor class (matching Tailwind's `darkMode: 'class'`
+   selector shape - see tailwind.config.js/useResolvedDarkMode.ts), not `@media
+   (prefers-color-scheme: dark)` - a host's own dark-mode toggle is virtually always a class higher
+   up the DOM (e.g. <html class="dark">), independent of the OS setting a media query is limited to
+   (ForumService issue #6: this exact `.forum-card` background stayed white under a host's class-
+   based dark toggle even though prefers-color-scheme-based dark mode worked fine). `.dark` also
+   gets self-applied on the widget's own root by default (theme="auto"), so plain OS-preference
+   dark mode with no host toggle at all keeps working unchanged. */
 .forum-thread .forum-card {
   background-color: #fff !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .forum-thread .forum-card {
-    background-color: #111827 !important;
-  }
+.dark .forum-thread .forum-card {
+  background-color: #111827 !important;
 }

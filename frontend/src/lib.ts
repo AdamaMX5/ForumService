@@ -3,6 +3,7 @@
 // use the separate Web Component build (see webcomponent.ts / dist/webcomponent).
 export { ForumThread, ForumThreadView } from './components/ForumThread';
 export type { ForumThreadProps } from './components/ForumThread';
+export type { ThemeMode } from './hooks/useResolvedDarkMode';
 export { ForumAuthProvider, useForumAuth } from './auth/AuthContext';
 export type { ExternalAuth } from './auth/AuthContext';
 export { createForumApi, ForumApiError } from './api/forumApi';

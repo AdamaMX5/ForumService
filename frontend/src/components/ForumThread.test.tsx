@@ -220,4 +220,55 @@ describe('ForumThread', () => {
       expect(screen.getByRole('button', { name: 'Diskussionsforum' })).toBeInTheDocument();
     });
   });
+
+  describe('dark mode wrapper class (ForumService issue #6)', () => {
+    function mockPrefersColorScheme(matches: boolean) {
+      vi.spyOn(window, 'matchMedia').mockReturnValue({
+        matches,
+        media: '(prefers-color-scheme: dark)',
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      } as unknown as MediaQueryList);
+    }
+
+    it('applies no "dark" wrapper class by default when the OS has no dark preference', async () => {
+      mockPrefersColorScheme(false);
+      const { container } = renderThread('t1');
+      await waitFor(() => expect(screen.getByText(/Tempolimit/)).toBeInTheDocument());
+
+      expect(container.querySelector('.dark')).not.toBeInTheDocument();
+    });
+
+    it('theme="auto" (default) follows the OS prefers-color-scheme setting', async () => {
+      mockPrefersColorScheme(true);
+      const { container } = renderThread('t1');
+      await waitFor(() => expect(screen.getByText(/Tempolimit/)).toBeInTheDocument());
+
+      expect(container.querySelector('.dark')).toBeInTheDocument();
+    });
+
+    it('theme="dark" forces the wrapper dark regardless of OS preference - for a host that manages its own theme toggle independently of prefers-color-scheme', async () => {
+      mockPrefersColorScheme(false);
+      const { container } = render(
+        <ForumThread nodeId="t1" forumApiBaseUrl={FORUM_BASE_URL} externalAuth={{ accessToken: null }} theme="dark" />
+      );
+      await waitFor(() => expect(screen.getByText(/Tempolimit/)).toBeInTheDocument());
+
+      expect(container.querySelector('.dark')).toBeInTheDocument();
+    });
+
+    it('theme="light" forces the wrapper light regardless of OS preference', async () => {
+      mockPrefersColorScheme(true);
+      const { container } = render(
+        <ForumThread nodeId="t1" forumApiBaseUrl={FORUM_BASE_URL} externalAuth={{ accessToken: null }} theme="light" />
+      );
+      await waitFor(() => expect(screen.getByText(/Tempolimit/)).toBeInTheDocument());
+
+      expect(container.querySelector('.dark')).not.toBeInTheDocument();
+    });
+  });
 });

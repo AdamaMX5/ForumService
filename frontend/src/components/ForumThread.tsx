@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ForumAuthProvider, useForumAuth, type ExternalAuth } from '../auth/AuthContext';
 import { useDeepLinkParams } from '../hooks/useDeepLinkParams';
+import { useResolvedDarkMode, type ThemeMode } from '../hooks/useResolvedDarkMode';
 import { ArgumentColumn } from './ArgumentColumn';
 import { CommentsModal } from './CommentsModal';
 import { ForumUIProvider } from './ForumUIContext';
@@ -31,21 +32,37 @@ export interface ForumThreadProps {
    */
   externalAuth?: ExternalAuth;
   forumApiBaseUrl?: string;
+  /**
+   * Which theme to render in. Default `'auto'` follows the OS-level prefers-color-scheme setting,
+   * same as before. Pass `'dark'`/`'light'` when the host app already tracks its own theme state
+   * (e.g. a manual dark-mode toggle) and wants ForumThread to follow it explicitly instead of
+   * OS-detection - mirrors `externalAuth` for auth state.
+   *
+   * Note this only overrides ForumThread's own OS-preference auto-detection, not the CSS cascade:
+   * a host managing dark mode via a `.dark` class on an ancestor element (the common pattern)
+   * already works without this prop at all, since Tailwind's dark: utilities here match any
+   * ancestor with that class (see useResolvedDarkMode.ts) - but that also means `theme="light"`
+   * cannot force ForumThread lighter than an ancestor `.dark` context it happens to be mounted
+   * inside; a host that wants a differently-themed ForumThread than the rest of its page needs to
+   * render it outside that `.dark`-scoped subtree.
+   */
+  theme?: ThemeMode;
 }
 
 /** Public entry point: self-contained, wraps itself in a ForumAuthProvider. */
-export function ForumThread({ nodeId, externalAuth, forumApiBaseUrl }: ForumThreadProps) {
+export function ForumThread({ nodeId, externalAuth, forumApiBaseUrl, theme }: ForumThreadProps) {
   return (
     <ForumAuthProvider externalAuth={externalAuth} forumApiBaseUrl={forumApiBaseUrl}>
-      <ForumThreadView nodeId={nodeId} />
+      <ForumThreadView nodeId={nodeId} theme={theme} />
     </ForumAuthProvider>
   );
 }
 
 /** Use this instead of <ForumThread> when you already render a <ForumAuthProvider> higher up
  * (e.g. to share one login session across multiple ForumThread instances on the same page). */
-export function ForumThreadView({ nodeId }: { nodeId?: string }) {
+export function ForumThreadView({ nodeId, theme = 'auto' }: { nodeId?: string; theme?: ThemeMode }) {
   const { api, accessToken } = useForumAuth();
+  const isDark = useResolvedDarkMode(theme);
   const [params, setParams] = useDeepLinkParams();
   // The "Diskussionsforum" heading (see below) must always be able to reach the Themen overview,
   // even when the host pinned a fixed nodeId - overrides both the `?thema=` param and the nodeId
@@ -180,52 +197,59 @@ export function ForumThreadView({ nodeId }: { nodeId?: string }) {
   );
 
   return (
-    <div className="forum-thread relative w-full space-y-4 p-4 text-gray-900 dark:text-gray-50">
-      <h1 className="text-xl font-bold">
-        <button type="button" onClick={backToThemenliste} className="hover:underline">
-          Diskussionsforum
-        </button>
-      </h1>
+    // `dark` is applied on this wrapper, one level above `.forum-thread` itself - Tailwind's
+    // 'class' darkMode strategy generates ancestor-based selectors (`.dark .dark\:foo`), which
+    // never match an element that carries the `dark` marker AND a `dark:` utility on itself at the
+    // same time. Keeping the marker on a dedicated outer element means every dark: utility inside,
+    // including `.forum-thread`'s own `dark:text-gray-50`, is a genuine descendant of it.
+    <div className={isDark ? 'dark' : undefined}>
+      <div className="forum-thread relative w-full space-y-4 p-4 text-gray-900 dark:text-gray-50">
+        <h1 className="text-xl font-bold">
+          <button type="button" onClick={backToThemenliste} className="hover:underline">
+            Diskussionsforum
+          </button>
+        </h1>
 
-      {!rootId && <ThemenListe onSelect={selectThema} />}
+        {!rootId && <ThemenListe onSelect={selectThema} />}
 
-      {rootId && isLoadingRoot && <p className="text-sm text-gray-500">Lade Diskussion…</p>}
-      {rootId && rootError && <p className="text-sm text-red-600">{rootError}</p>}
+        {rootId && isLoadingRoot && <p className="text-sm text-gray-500">Lade Diskussion…</p>}
+        {rootId && rootError && <p className="text-sm text-red-600">{rootError}</p>}
 
-      {rootId && root && (
-        <div className="forum-thread-body">
-          <ForumUIProvider value={ui}>
-            <ThreadHeader
-              root={root}
-              likesCount={likesCount}
-              onLikesCountChange={setLikesCount}
-              onRootUpdated={setRoot}
-              onRootDeleted={backToThemenliste}
-            />
-            <div className="forum-columns">
-              {CHILD_TYPES.map((typ) => (
-                <ArgumentColumn key={typ} parentId={root.id} edgeTyp={typ} />
-              ))}
-            </div>
-          </ForumUIProvider>
-        </div>
-      )}
+        {rootId && root && (
+          <div className="forum-thread-body">
+            <ForumUIProvider value={ui}>
+              <ThreadHeader
+                root={root}
+                likesCount={likesCount}
+                onLikesCountChange={setLikesCount}
+                onRootUpdated={setRoot}
+                onRootDeleted={backToThemenliste}
+              />
+              <div className="forum-columns">
+                {CHILD_TYPES.map((typ) => (
+                  <ArgumentColumn key={typ} parentId={root.id} edgeTyp={typ} />
+                ))}
+              </div>
+            </ForumUIProvider>
+          </div>
+        )}
 
-      {commentsNodeId && <CommentsModal nodeId={commentsNodeId} onClose={closeComments} />}
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-      {showNewThema && <NewThemaModal onCreated={handleThemaCreated} onCancel={() => setShowNewThema(false)} />}
+        {commentsNodeId && <CommentsModal nodeId={commentsNodeId} onClose={closeComments} />}
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+        {showNewThema && <NewThemaModal onCreated={handleThemaCreated} onCancel={() => setShowNewThema(false)} />}
 
-      {!rootId && (
-        <button
-          type="button"
-          onClick={openNewThema}
-          aria-label="Neues Thema erstellen"
-          title="Neues Thema erstellen"
-          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-2xl leading-none text-white shadow-lg hover:bg-blue-700"
-        >
-          +
-        </button>
-      )}
+        {!rootId && (
+          <button
+            type="button"
+            onClick={openNewThema}
+            aria-label="Neues Thema erstellen"
+            title="Neues Thema erstellen"
+            className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-2xl leading-none text-white shadow-lg hover:bg-blue-700"
+          >
+            +
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -28,7 +28,6 @@ function node(
       pro: pro ? textVersion(pro) : null,
       contra: contra ? textVersion(contra) : null,
     },
-    tags: [],
     anhaenge: [],
     ersteller_id: 'user-1',
     erstellt_am: new Date('2026-01-05T10:00:00Z').toISOString(),
@@ -46,7 +45,6 @@ export const mockNodes = new Map<string, ForumNode>(
   [
     node('t1', 'thema', {
       neutral: 'Sollte auf deutschen Autobahnen ein generelles Tempolimit von 130 km/h gelten?',
-      tags: ['Verkehr', 'Klimaschutz'],
       likes_count: 42,
       comments_count: 3,
     }),

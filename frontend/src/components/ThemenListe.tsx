@@ -43,18 +43,6 @@ export function ThemenListe({ onSelect }: { onSelect: (nodeId: string) => void }
               <p className="font-medium text-gray-900 dark:text-gray-50">
                 {primaryText(thema.texte) || '(ohne Titel)'}
               </p>
-              {thema.tags.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {thema.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
               <p className="mt-1 text-xs text-gray-500">
                 👍 {thema.likes_count} · 💬 {thema.comments_count}
               </p>

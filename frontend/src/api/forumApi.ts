@@ -33,7 +33,6 @@ export interface KinderQuery {
 }
 
 export interface ThemenQuery {
-  tags?: string[];
   sort?: SortMode;
   cursor?: string | null;
   limit?: number;
@@ -89,7 +88,6 @@ export function createForumApi(baseUrl: string, auth: ForumApiAuthAdapter) {
   return {
     getThemen(query: ThemenQuery = {}): Promise<Paginated<ForumNode>> {
       const qs = toQueryString({
-        tags: query.tags?.join(','),
         sort: query.sort,
         cursor: query.cursor,
         limit: query.limit,

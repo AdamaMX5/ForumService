@@ -181,7 +181,7 @@ router.post(
   requireAuth,
   writeLimiter,
   asyncHandler(async (req, res) => {
-    const { typ, texte, tags, anhaenge, parent_id: parentId, edge_typ: edgeTyp } = req.body || {};
+    const { typ, texte, anhaenge, parent_id: parentId, edge_typ: edgeTyp } = req.body || {};
 
     if (!['thema', 'argument'].includes(typ)) {
       throw new HttpError(400, 'typ must be "thema" or "argument"');
@@ -214,7 +214,6 @@ router.post(
     const node = await Node.create({
       typ,
       texte: texteDoc,
-      tags: Array.isArray(tags) ? tags : [],
       anhaenge: Array.isArray(anhaenge)
         ? anhaenge.map((a) => ({ ...a, hinzugefuegt_von: req.user.sub, datum: now }))
         : [],

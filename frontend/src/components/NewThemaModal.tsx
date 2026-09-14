@@ -13,7 +13,6 @@ export function NewThemaModal({
 }) {
   const { api } = useForumAuth();
   const [text, setText] = useState('');
-  const [tagsInput, setTagsInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,14 +22,9 @@ export function NewThemaModal({
     setIsSubmitting(true);
     setError(null);
     try {
-      const tags = tagsInput
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean);
       const node = await api.createNode({
         typ: 'thema',
         texte: { neutral: text.trim() },
-        tags: tags.length > 0 ? tags : undefined,
       });
       onCreated(node);
     } catch (err) {
@@ -66,13 +60,6 @@ export function NewThemaModal({
           required
           autoFocus
           placeholder="Worum soll es in diesem Thema gehen?"
-          className="w-full rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800"
-        />
-        <input
-          type="text"
-          value={tagsInput}
-          onChange={(e) => setTagsInput(e.target.value)}
-          placeholder="Tags, kommagetrennt (optional)"
           className="w-full rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}

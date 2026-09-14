@@ -17,7 +17,6 @@ function serializeNode(node, { likedByMe } = {}) {
       pro: currentVersion(node.texte?.pro),
       contra: currentVersion(node.texte?.contra),
     },
-    tags: (node.tags || []).map(String),
     anhaenge: node.anhaenge || [],
     ersteller_id: node.ersteller_id,
     erstellt_am: node.erstellt_am,

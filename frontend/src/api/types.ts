@@ -30,7 +30,6 @@ export interface ForumNode {
     pro: TextVersion | null;
     contra: TextVersion | null;
   };
-  tags: string[];
   anhaenge: Anhang[];
   ersteller_id: string;
   erstellt_am: string;
@@ -85,7 +84,6 @@ export interface ReferenzEdge {
 export interface NewNodeInput {
   typ: NodeTyp;
   texte: { neutral?: string; pro?: string; contra?: string };
-  tags?: string[];
   anhaenge?: Array<{ typ: Anhang['typ']; url: string; titel?: string }>;
   parent_id?: string;
   edge_typ?: EdgeTyp;

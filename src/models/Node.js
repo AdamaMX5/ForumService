@@ -30,7 +30,6 @@ const nodeSchema = new Schema({
     pro: { type: [textVersionSchema], default: [] },
     contra: { type: [textVersionSchema], default: [] },
   },
-  tags: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
   anhaenge: { type: [anhangSchema], default: [] },
   ersteller_id: { type: String, required: true },
   erstellt_am: { type: Date, default: Date.now },
@@ -50,7 +49,6 @@ nodeSchema.index({ typ: 1, soft_deleted: 1, sichtbarkeit: 1, erstellt_am: -1 });
 nodeSchema.index({ typ: 1, soft_deleted: 1, sichtbarkeit: 1, likes_count: -1 });
 nodeSchema.index({ soft_deleted: 1, erstellt_am: -1 });
 nodeSchema.index({ soft_deleted: 1, likes_count: -1 });
-nodeSchema.index({ tags: 1 });
 nodeSchema.index(
   {
     'texte.neutral.text': 'text',

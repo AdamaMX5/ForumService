@@ -29,18 +29,6 @@ export function ThreadHeader({
   return (
     <header className="space-y-2 border-b border-gray-200 pb-3 dark:border-gray-700">
       <h1 className="text-xl font-bold">{primaryText(root.texte) || '(ohne Titel)'}</h1>
-      {root.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {root.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3 text-sm">
           <LikeButton

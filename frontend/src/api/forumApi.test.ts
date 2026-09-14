@@ -33,14 +33,14 @@ describe('forumApi', () => {
   }
 
   describe('request shapes', () => {
-    it('getThemen sends tags joined, sort and cursor as query params', async () => {
+    it('getThemen sends sort and cursor as query params', async () => {
       fetchMock.mockResolvedValueOnce(jsonResponse({ data: [], nextCursor: null }));
       const api = createForumApi(BASE_URL, auth);
 
-      await api.getThemen({ tags: ['a', 'b'], sort: 'neu', cursor: 'cur1', limit: 5 });
+      await api.getThemen({ sort: 'neu', cursor: 'cur1', limit: 5 });
 
       const { url, init } = lastRequest();
-      expect(url).toBe(`${BASE_URL}/themen?tags=a%2Cb&sort=neu&cursor=cur1&limit=5`);
+      expect(url).toBe(`${BASE_URL}/themen?sort=neu&cursor=cur1&limit=5`);
       expect(init.method ?? 'GET').toBe('GET');
     });
 

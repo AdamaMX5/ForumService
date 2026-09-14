@@ -267,7 +267,6 @@ export const handlers = [
         pro: body.texte.pro ? { version: 1, text: body.texte.pro, autor_id: 'mock-user-1', datum: new Date().toISOString() } : null,
         contra: body.texte.contra ? { version: 1, text: body.texte.contra, autor_id: 'mock-user-1', datum: new Date().toISOString() } : null,
       },
-      tags: [],
       anhaenge: [],
       ersteller_id: 'mock-user-1',
       erstellt_am: new Date().toISOString(),

@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe('ForumThread', () => {
-  it('shows a loading indicator, then the loaded thema (title, tags, pro/contra/differenzierung columns)', async () => {
+  it('shows a loading indicator, then the loaded thema (title, pro/contra/differenzierung columns)', async () => {
     renderThread('t1');
 
     expect(screen.getByText(/Lade Diskussion/)).toBeInTheDocument();
@@ -29,7 +29,6 @@ describe('ForumThread', () => {
       ).toBeInTheDocument()
     );
     expect(screen.queryByText(/Lade Diskussion/)).not.toBeInTheDocument();
-    expect(screen.getByText('Verkehr')).toBeInTheDocument();
     expect(screen.getByText('Pro')).toBeInTheDocument();
     expect(screen.getByText('Contra')).toBeInTheDocument();
     expect(screen.getByText('Differenzierung')).toBeInTheDocument();

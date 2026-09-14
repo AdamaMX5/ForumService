@@ -33,7 +33,7 @@ Nur schreibende Aktionen (Node/Kommentar anlegen, liken, editieren) erfordern ei
 
 | Method | Endpoint | Auth | Query | Description |
 |--------|----------|------|-------|--------------|
-| `GET` | `/themen` | optional JWT | `tags`, `sort` (`neu`\|`likes`\|`beste`, default `beste`), `cursor`, `limit` (max 100) | Themen (Wurzel-Diskussionen) auflisten — private Themen werden Nicht-Mod/Admin serverseitig ausgefiltert |
+| `GET` | `/themen` | optional JWT | `sort` (`neu`\|`likes`\|`beste`, default `beste`), `cursor`, `limit` (max 100) | Themen (Wurzel-Diskussionen) auflisten — private Themen werden Nicht-Mod/Admin serverseitig ausgefiltert |
 
 ---
 
@@ -46,7 +46,7 @@ Nur schreibende Aktionen (Node/Kommentar anlegen, liken, editieren) erfordern ei
 | `GET` | `/nodes/:id/kommentare` | optional JWT | Paginierte Kommentare (chronologisch) — Query: `cursor`, `limit` |
 | `GET` | `/nodes/:id/referenzen` | optional JWT | Ausgehende `referenz`-Edges, aufgelöst zu den Ziel-Nodes (für den Ziel-Aufrufer unsichtbare/gelöschte Ziele werden stillschweigend gefiltert) — Query: `limit` |
 | `GET` | `/nodes/:id/pfad` | optional JWT | Pfad von der Thema-Wurzel bis `:id` (root-first) — für Deep-Linking (`?fokus=`), damit der Client den Baum entlang aufklappen kann |
-| `POST` | `/nodes` | JWT | Neuer Node — Body: `typ` (`thema`\|`argument`)*, `texte: { neutral?, pro?, contra? }` (mind. eine Spalte), `tags?`, `anhaenge?`; bei `typ: "argument"` zusätzlich `parent_id`*, `edge_typ`* (`pro`\|`contra`\|`differenzierung`) → `201` |
+| `POST` | `/nodes` | JWT | Neuer Node — Body: `typ` (`thema`\|`argument`)*, `texte: { neutral?, pro?, contra? }` (mind. eine Spalte), `anhaenge?`; bei `typ: "argument"` zusätzlich `parent_id`*, `edge_typ`* (`pro`\|`contra`\|`differenzierung`) → `201` |
 | `PUT` | `/nodes/:id/text` | JWT + `FORUM_MODERATOR`/`ADMIN` | Neue Textversion anlegen — Body: `neutral?`, `pro?`, `contra?` (mind. eine) |
 | `PUT` | `/nodes/:id/sichtbarkeit` | JWT + `ADMIN` | Nur `typ: "thema"` — Body: `{ sichtbarkeit: "oeffentlich" \| "privat" }` |
 | `DELETE` | `/nodes/:id` | JWT + `FORUM_MODERATOR`/`ADMIN` | Soft-Delete — Body optional: `{ grund }` → `204` |
@@ -56,7 +56,7 @@ Nur schreibende Aktionen (Node/Kommentar anlegen, liken, editieren) erfordern ei
 | `POST` | `/nodes/:id/kommentare` | JWT | Neuer Kommentar — Body: `text`*, `parent_comment_id?` → `201` |
 
 **Node-Response-Shape** (`serializeNode`): `id`, `typ`, `texte: { neutral, pro, contra }` (jeweils nur
-die aktuellste Version), `tags`, `anhaenge`, `ersteller_id`, `erstellt_am`, `likes_count`,
+die aktuellste Version), `anhaenge`, `ersteller_id`, `erstellt_am`, `likes_count`,
 `comments_count`, `liked_by_me` (`true`/`false`/`null` — `null` = anonymer oder ungeprüfter Aufrufer),
 `bearbeitet_von`, `soft_deleted(_grund/_von)`, und bei `typ: "thema"` zusätzlich `sichtbarkeit`.
 

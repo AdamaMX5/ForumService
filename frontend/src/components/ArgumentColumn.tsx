@@ -4,6 +4,7 @@ import { useForumUI } from './ForumUIContext';
 import { useCursorPaginated } from '../hooks/useCursorPaginated';
 import { NewArgumentForm } from './NewArgumentForm';
 import { ArgumentNode } from './ArgumentNode';
+import { PlusIcon } from './icons';
 import type { EdgeTyp, ForumChildNode } from '../api/types';
 
 const COLUMN_STYLE: Record<EdgeTyp, { label: string; accent: string }> = {
@@ -36,9 +37,11 @@ export function ArgumentColumn({ parentId, edgeTyp }: { parentId: string; edgeTy
           <button
             type="button"
             onClick={() => setIsAdding((v) => !v)}
-            className="text-xs text-blue-600 hover:underline"
+            aria-label="Hinzufuegen"
+            title="Hinzufuegen"
+            className="text-blue-600 hover:text-blue-800"
           >
-            + Hinzufuegen
+            <PlusIcon className="h-4 w-4" />
           </button>
         )}
       </div>

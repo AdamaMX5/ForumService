@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForumAuth } from '../auth/AuthContext';
 import { canModerate, isAdmin } from '../auth/roles';
 import { EditTextModal } from './EditTextModal';
+import { PencilIcon, TrashIcon } from './icons';
 import type { ForumNode } from '../api/types';
 
 /**
@@ -71,8 +72,14 @@ export function ModerationControls({
     <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-dashed border-amber-300 pt-2 text-xs dark:border-amber-700">
       <span className="font-medium uppercase text-amber-600 dark:text-amber-400">Moderation</span>
 
-      <button type="button" onClick={() => setShowEdit(true)} className="text-blue-600 hover:underline">
-        Text bearbeiten
+      <button
+        type="button"
+        onClick={() => setShowEdit(true)}
+        aria-label="Text bearbeiten"
+        title="Text bearbeiten"
+        className="text-blue-600 hover:text-blue-800"
+      >
+        <PencilIcon />
       </button>
 
       {canToggleSichtbarkeit && (
@@ -87,8 +94,14 @@ export function ModerationControls({
       )}
 
       {!isConfirmingDelete ? (
-        <button type="button" onClick={() => setIsConfirmingDelete(true)} className="text-red-600 hover:underline">
-          Loeschen
+        <button
+          type="button"
+          onClick={() => setIsConfirmingDelete(true)}
+          aria-label="Loeschen"
+          title="Loeschen"
+          className="text-red-600 hover:text-red-800"
+        >
+          <TrashIcon />
         </button>
       ) : (
         <span className="flex flex-wrap items-center gap-1">
@@ -104,9 +117,11 @@ export function ModerationControls({
             type="button"
             onClick={confirmDelete}
             disabled={isDeleting}
-            className="text-red-600 hover:underline disabled:opacity-60"
+            aria-label={isDeleting ? 'Loescht…' : 'Wirklich loeschen'}
+            title={isDeleting ? 'Loescht…' : 'Wirklich loeschen'}
+            className="text-red-600 hover:text-red-800 disabled:opacity-60"
           >
-            {isDeleting ? 'Loescht…' : 'Wirklich loeschen'}
+            <TrashIcon />
           </button>
           <button type="button" onClick={() => setIsConfirmingDelete(false)} className="text-gray-500 hover:underline">
             Abbrechen

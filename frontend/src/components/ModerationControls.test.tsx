@@ -63,9 +63,17 @@ describe('ModerationControls - role gating', () => {
   it('shows edit + delete for a FORUM_MODERATOR, but no sichtbarkeit toggle (Admin-only)', () => {
     renderControls(themaNode(), { roles: ['FORUM_MODERATOR'], onSichtbarkeitChanged: vi.fn() });
     expect(screen.getByText('Moderation')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Text bearbeiten' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Loeschen' })).toBeInTheDocument();
+    const editButton = screen.getByRole('button', { name: 'Text bearbeiten' });
+    const deleteButton = screen.getByRole('button', { name: 'Loeschen' });
+    expect(editButton).toBeInTheDocument();
+    expect(deleteButton).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /schalten/ })).not.toBeInTheDocument();
+    // ForumService issue #11: these are icon buttons now, not link text - each renders an <svg>
+    // and carries no visible text content of its own (the label lives only in aria-label/title).
+    expect(editButton.querySelector('svg')).toBeTruthy();
+    expect(editButton.textContent).toBe('');
+    expect(deleteButton.querySelector('svg')).toBeTruthy();
+    expect(deleteButton.textContent).toBe('');
   });
 
   it('shows the sichtbarkeit toggle for an ADMIN on a thema node', () => {

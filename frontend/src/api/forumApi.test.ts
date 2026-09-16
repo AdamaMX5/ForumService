@@ -250,6 +250,23 @@ describe('forumApi', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
+    it('retries with the token returned by refreshAccessToken even if getAccessToken is still stale (externalAuth race)', async () => {
+      // Mirrors externalAuth: onNeedRefresh resolves with the new token before the host app's
+      // re-render has propagated it back into getAccessToken() (still the old prop value).
+      auth.getAccessToken = vi.fn(() => 'stale-token');
+      auth.refreshAccessToken = vi.fn().mockResolvedValue('fresh-token');
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse({ error: 'expired' }, 401))
+        .mockResolvedValueOnce(jsonResponse({ likes_count: 5 }, 201));
+      const api = createForumApi(BASE_URL, auth);
+
+      const result = await api.like('n1');
+
+      expect(result).toEqual({ likes_count: 5 });
+      const secondCallHeaders = fetchMock.mock.calls[1][1].headers as Record<string, string>;
+      expect(secondCallHeaders.Authorization).toBe('Bearer fresh-token');
+    });
+
     it('does not attempt a refresh on 401 when the request carried no token at all', async () => {
       auth.getAccessToken = vi.fn(() => null);
       fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'unauth' }, 401));

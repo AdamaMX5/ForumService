@@ -52,10 +52,17 @@ function toQueryString(params: Record<string, string | number | undefined | null
  * present and, on a 401 from a request that *did* carry a token, refreshes exactly once (via
  * `auth.refreshAccessToken`, which itself is expected to be mutex-guarded - see
  * `auth/refreshLock.ts`) and retries the request a single time before giving up.
+ *
+ * The retry uses the token *returned* by `refreshAccessToken()` directly, rather than reading
+ * `auth.getAccessToken()` again - under externalAuth, the host app propagates its new token back
+ * via a prop/re-render, and reading `getAccessToken()` right after `refreshAccessToken()`
+ * resolves can still observe the stale, expired token if that re-render hasn't landed yet. That
+ * race made the retry resend the same expired token and fail again immediately.
  */
 export function createForumApi(baseUrl: string, auth: ForumApiAuthAdapter) {
-  async function request<T>(path: string, init: RequestInit = {}, isRetry = false): Promise<T> {
-    const token = auth.getAccessToken();
+  async function request<T>(path: string, init: RequestInit = {}, tokenOverride?: string | null): Promise<T> {
+    const isRetry = tokenOverride !== undefined;
+    const token = isRetry ? tokenOverride : auth.getAccessToken();
     const headers: Record<string, string> = {
       Accept: 'application/json',
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),
@@ -66,8 +73,8 @@ export function createForumApi(baseUrl: string, auth: ForumApiAuthAdapter) {
     const res = await fetch(`${baseUrl}${path}`, { ...init, headers });
 
     if (res.status === 401 && token && !isRetry) {
-      await auth.refreshAccessToken();
-      return request<T>(path, init, true);
+      const freshToken = await auth.refreshAccessToken();
+      return request<T>(path, init, freshToken);
     }
 
     if (res.status === 204) return undefined as T;

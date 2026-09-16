@@ -79,7 +79,7 @@ export function CommentsModal({
               onClick={openReportIssue}
               aria-label="Idee oder Bug melden"
               title="Idee oder Bug melden"
-              className="text-gray-500 hover:text-yellow-500"
+              className="text-yellow-500 hover:text-yellow-600"
             >
               💡
             </button>

@@ -68,8 +68,8 @@ describe('ModerationControls - role gating', () => {
     expect(editButton).toBeInTheDocument();
     expect(deleteButton).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /schalten/ })).not.toBeInTheDocument();
-    // ForumService issue #11: these are icon buttons now, not link text - each renders an <svg>
-    // and carries no visible text content of its own (the label lives only in aria-label/title).
+    // These are icon buttons now, not link text - each renders an <svg> and carries no visible
+    // text content of its own (the label lives only in aria-label/title).
     expect(editButton.querySelector('svg')).toBeTruthy();
     expect(editButton.textContent).toBe('');
     expect(deleteButton.querySelector('svg')).toBeTruthy();

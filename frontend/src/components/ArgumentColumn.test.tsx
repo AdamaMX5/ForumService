@@ -25,7 +25,7 @@ function renderColumn(accessToken: string | null) {
   );
 }
 
-describe('ArgumentColumn - "Hinzufuegen" icon button (ForumService issue #11)', () => {
+describe('ArgumentColumn - "Hinzufuegen" icon button', () => {
   it('renders an icon-only add button for a logged-in caller, with no visible link text', async () => {
     renderColumn('fake-token');
 

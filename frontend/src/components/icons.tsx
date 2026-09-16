@@ -1,6 +1,6 @@
-// Small inline SVG icon set for action buttons that used to be plain link text (edit/delete/add -
-// see ForumService issue #11). `aria-hidden` since the enclosing button always carries the
-// accessible name via `aria-label`, not the icon itself.
+// Small inline SVG icon set for action buttons that used to be plain link text (edit/delete/add).
+// `aria-hidden` since the enclosing button always carries the accessible name via `aria-label`,
+// not the icon itself.
 
 type IconProps = { className?: string };
 

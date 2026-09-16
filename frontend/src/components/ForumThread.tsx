@@ -7,6 +7,7 @@ import { CommentsModal } from './CommentsModal';
 import { ForumUIProvider } from './ForumUIContext';
 import { LoginModal } from './LoginModal';
 import { NewThemaModal } from './NewThemaModal';
+import { ReportIssueModal } from './ReportIssueModal';
 import { ThemenListe } from './ThemenListe';
 import { ThreadHeader } from './ThreadHeader';
 import type { EdgeTyp, ForumNode, SortMode } from '../api/types';
@@ -78,6 +79,7 @@ export function ForumThreadView({ nodeId, theme = 'auto' }: { nodeId?: string; t
   const [commentsNodeId, setCommentsNodeId] = useState<string | null>(params.kommentare);
   const [showLogin, setShowLogin] = useState(false);
   const [showNewThema, setShowNewThema] = useState(false);
+  const [showReportIssue, setShowReportIssue] = useState(false);
   const [pathToFocusIds, setPathToFocusIds] = useState<Set<string>>(EMPTY_PATH);
 
   useEffect(() => {
@@ -168,6 +170,14 @@ export function ForumThreadView({ nodeId, theme = 'auto' }: { nodeId?: string; t
     setShowNewThema(true);
   }
 
+  function openReportIssue() {
+    if (!accessToken) {
+      requireAuth();
+      return;
+    }
+    setShowReportIssue(true);
+  }
+
   function handleThemaCreated(node: ForumNode) {
     setShowNewThema(false);
     selectThema(node.id);
@@ -204,11 +214,22 @@ export function ForumThreadView({ nodeId, theme = 'auto' }: { nodeId?: string; t
     // including `.forum-thread`'s own `dark:text-gray-50`, is a genuine descendant of it.
     <div className={isDark ? 'dark' : undefined}>
       <div className="forum-thread relative w-full space-y-4 p-4 text-gray-900 dark:text-gray-50">
-        <h1 className="text-xl font-bold">
-          <button type="button" onClick={backToThemenliste} className="hover:underline">
-            Diskussionsforum
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">
+            <button type="button" onClick={backToThemenliste} className="hover:underline">
+              Diskussionsforum
+            </button>
+          </h1>
+          <button
+            type="button"
+            onClick={openReportIssue}
+            aria-label="Idee oder Bug melden"
+            title="Idee oder Bug melden"
+            className="text-yellow-500 hover:text-yellow-600"
+          >
+            💡
           </button>
-        </h1>
+        </div>
 
         {!rootId && <ThemenListe onSelect={selectThema} />}
 
@@ -239,6 +260,7 @@ export function ForumThreadView({ nodeId, theme = 'auto' }: { nodeId?: string; t
         )}
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         {showNewThema && <NewThemaModal onCreated={handleThemaCreated} onCancel={() => setShowNewThema(false)} />}
+        {showReportIssue && <ReportIssueModal onClose={() => setShowReportIssue(false)} />}
 
         {!rootId && (
           <button

@@ -53,6 +53,39 @@ describe('ForumThread', () => {
     expect(screen.getByRole('button', { name: 'Neues Thema erstellen' })).toBeInTheDocument();
   });
 
+  describe('"Idee oder Bug melden" icon next to the Diskussionsforum heading', () => {
+    it('opens the ReportIssueModal when logged in', async () => {
+      const user = userEvent.setup();
+      renderThread('t1', 'fake-token');
+
+      await waitFor(() =>
+        expect(
+          screen.getByText('Sollte auf deutschen Autobahnen ein generelles Tempolimit von 130 km/h gelten?')
+        ).toBeInTheDocument()
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Idee oder Bug melden' }));
+
+      expect(screen.getByRole('dialog', { name: 'Idee oder Bug melden' })).toBeInTheDocument();
+    });
+
+    it('requires login before opening it for an anonymous caller', async () => {
+      const user = userEvent.setup();
+      renderThread('t1');
+
+      await waitFor(() =>
+        expect(
+          screen.getByText('Sollte auf deutschen Autobahnen ein generelles Tempolimit von 130 km/h gelten?')
+        ).toBeInTheDocument()
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Idee oder Bug melden' }));
+
+      expect(screen.queryByRole('dialog', { name: 'Idee oder Bug melden' })).not.toBeInTheDocument();
+      expect(screen.getAllByRole('dialog')).toHaveLength(1); // the LoginModal instead
+    });
+  });
+
   it('shows an error message when the root node fails to load', async () => {
     renderThread('does-not-exist');
 

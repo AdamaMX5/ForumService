@@ -6,8 +6,9 @@ type ReportTyp = 'idee' | 'bug';
 
 const GIT_SERVICE_REPO = import.meta.env.VITE_GIT_SERVICE_REPO ?? 'ForumService';
 
-/** Popup form (opened via the 💡-Icon neben dem Schliessen-Icon im Kommentare-Popup) to file an
- * idea or bug report as a GitService issue - see Issue #7. */
+/** Popup form to file an idea or bug report as a GitService issue - see Issue #7. Opened via the
+ * 💡-Icon top-right of the always-visible "Diskussionsforum" heading (ForumThread.tsx), and also
+ * from the smaller 💡-Icon next to the Schliessen-Icon in the Kommentare-Popup. */
 export function ReportIssueModal({ onClose }: { onClose: () => void }) {
   const { accessToken, refreshAccessToken } = useForumAuth();
   const [typ, setTyp] = useState<ReportTyp>('idee');

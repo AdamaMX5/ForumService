@@ -25,6 +25,11 @@ const anhangSchema = new Schema(
 
 const nodeSchema = new Schema({
   typ: { type: String, enum: ['thema', 'argument'], required: true },
+  // Only meaningful for typ "thema" - a short heading shown in /themen listings, separate from
+  // the (now purely body-text) `texte.neutral` column. Not required at the schema level so
+  // pre-existing themen created before this field's introduction stay valid; enforced as
+  // required for *new* themen in the route layer instead (see POST /nodes).
+  titel: String,
   texte: {
     neutral: { type: [textVersionSchema], default: [] },
     pro: { type: [textVersionSchema], default: [] },
@@ -57,5 +62,8 @@ nodeSchema.index(
   },
   { name: 'node_fulltext' }
 );
+// `titel` is intentionally not part of node_fulltext: adding a key to an existing text index
+// under the same name would conflict with the index already deployed in production
+// (IndexKeySpecsConflict) with no migration tooling in this repo to drop/recreate it safely.
 
 module.exports = mongoose.model('Node', nodeSchema);

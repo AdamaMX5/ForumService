@@ -12,18 +12,20 @@ export function NewThemaModal({
   onCancel: () => void;
 }) {
   const { api } = useForumAuth();
+  const [titel, setTitel] = useState('');
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!titel.trim() || !text.trim()) return;
     setIsSubmitting(true);
     setError(null);
     try {
       const node = await api.createNode({
         typ: 'thema',
+        titel: titel.trim(),
         texte: { neutral: text.trim() },
       });
       onCreated(node);
@@ -53,13 +55,22 @@ export function NewThemaModal({
             ✕
           </button>
         </div>
+        <input
+          type="text"
+          value={titel}
+          onChange={(e) => setTitel(e.target.value)}
+          required
+          autoFocus
+          maxLength={200}
+          placeholder="Überschrift"
+          className="w-full rounded border border-gray-300 px-2 py-1 text-sm font-medium dark:border-gray-600 dark:bg-gray-800"
+        />
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={4}
           required
-          autoFocus
-          placeholder="Worum soll es in diesem Thema gehen?"
+          placeholder="Worum soll es in diesem Thema gehen? (Markdown wird unterstützt)"
           className="w-full rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -73,7 +84,7 @@ export function NewThemaModal({
           </button>
           <button
             type="submit"
-            disabled={isSubmitting || !text.trim()}
+            disabled={isSubmitting || !titel.trim() || !text.trim()}
             className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {isSubmitting ? 'Speichern…' : 'Thema erstellen'}

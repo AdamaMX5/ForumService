@@ -164,8 +164,11 @@ export function createForumApi(baseUrl: string, auth: ForumApiAuthAdapter) {
 
     // --- Moderation (FORUM_MODERATOR/ADMIN) ---
 
-    updateNodeText(nodeId: string, texte: { neutral?: string; pro?: string; contra?: string }): Promise<ForumNode> {
-      return request(`/nodes/${nodeId}/text`, { method: 'PUT', body: JSON.stringify(texte) });
+    updateNodeText(
+      nodeId: string,
+      updates: { titel?: string; neutral?: string; pro?: string; contra?: string }
+    ): Promise<ForumNode> {
+      return request(`/nodes/${nodeId}/text`, { method: 'PUT', body: JSON.stringify(updates) });
     },
 
     setSichtbarkeit(nodeId: string, sichtbarkeit: Sichtbarkeit): Promise<ForumNode> {

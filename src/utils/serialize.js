@@ -27,7 +27,7 @@ function serializeNode(node, { likedByMe } = {}) {
     soft_deleted: node.soft_deleted,
     soft_deleted_grund: node.soft_deleted_grund,
     soft_deleted_von: node.soft_deleted_von,
-    ...(node.typ === 'thema' ? { sichtbarkeit: node.sichtbarkeit } : {}),
+    ...(node.typ === 'thema' ? { sichtbarkeit: node.sichtbarkeit, titel: node.titel || null } : {}),
   };
 }
 

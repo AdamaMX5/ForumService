@@ -102,6 +102,30 @@ describe('ModerationControls - edit text', () => {
   });
 });
 
+describe('ModerationControls - edit titel (thema only)', () => {
+  it('shows a titel input for a thema node and saves a titel-only change without a new texte version', async () => {
+    const user = userEvent.setup();
+    const onTextUpdated = vi.fn();
+    renderControls(themaNode(), { roles: ['FORUM_MODERATOR'], onTextUpdated });
+
+    await user.click(screen.getByRole('button', { name: 'Text bearbeiten' }));
+    await user.type(screen.getByPlaceholderText('Überschrift'), 'Neue Ueberschrift');
+    await user.click(screen.getByRole('button', { name: 'Neue Version speichern' }));
+
+    await waitFor(() => expect(onTextUpdated).toHaveBeenCalledTimes(1));
+    expect(onTextUpdated.mock.calls[0][0]).toMatchObject({ titel: 'Neue Ueberschrift' });
+    expect(onTextUpdated.mock.calls[0][0].texte.neutral.version).toBe(1);
+  });
+
+  it('does not show a titel input for an argument node', async () => {
+    const user = userEvent.setup();
+    renderControls(argumentNode(), { roles: ['FORUM_MODERATOR'] });
+
+    await user.click(screen.getByRole('button', { name: 'Text bearbeiten' }));
+    expect(screen.queryByPlaceholderText('Überschrift')).not.toBeInTheDocument();
+  });
+});
+
 describe('ModerationControls - sichtbarkeit toggle', () => {
   it('toggles oeffentlich -> privat and reports the updated node', async () => {
     const user = userEvent.setup();

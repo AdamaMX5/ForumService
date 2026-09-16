@@ -181,10 +181,14 @@ router.post(
   requireAuth,
   writeLimiter,
   asyncHandler(async (req, res) => {
-    const { typ, texte, anhaenge, parent_id: parentId, edge_typ: edgeTyp } = req.body || {};
+    const { typ, titel, texte, anhaenge, parent_id: parentId, edge_typ: edgeTyp } = req.body || {};
 
     if (!['thema', 'argument'].includes(typ)) {
       throw new HttpError(400, 'typ must be "thema" or "argument"');
+    }
+
+    if (typ === 'thema' && (typeof titel !== 'string' || titel.trim().length === 0)) {
+      throw new HttpError(400, 'titel is required for typ "thema"');
     }
 
     const providedColumns = ['neutral', 'pro', 'contra'].filter(
@@ -213,6 +217,7 @@ router.post(
 
     const node = await Node.create({
       typ,
+      ...(typ === 'thema' ? { titel: titel.trim() } : {}),
       texte: texteDoc,
       anhaenge: Array.isArray(anhaenge)
         ? anhaenge.map((a) => ({ ...a, hinzugefuegt_von: req.user.sub, datum: now }))
@@ -251,19 +256,26 @@ router.put(
   asyncHandler(async (req, res) => {
     const node = await loadVisible(req.params.id, req.user);
 
-    const { neutral, pro, contra } = req.body || {};
+    const { titel, neutral, pro, contra } = req.body || {};
     const updates = { neutral, pro, contra };
     const providedColumns = Object.keys(updates).filter(
       (col) => typeof updates[col] === 'string' && updates[col].trim().length > 0
     );
-    if (providedColumns.length === 0) {
-      throw new HttpError(400, 'At least one of neutral/pro/contra is required');
+    const titelProvided = typeof titel === 'string' && titel.trim().length > 0;
+    if (providedColumns.length === 0 && !titelProvided) {
+      throw new HttpError(400, 'At least one of titel/neutral/pro/contra is required');
+    }
+    if (titelProvided && node.typ !== 'thema') {
+      throw new HttpError(400, 'titel only applies to typ "thema"');
     }
 
     const now = new Date();
     for (const col of providedColumns) {
       const nextVersion = (node.texte[col]?.length || 0) + 1;
       node.texte[col].push({ version: nextVersion, text: updates[col].trim(), autor_id: req.user.sub, datum: now });
+    }
+    if (titelProvided) {
+      node.titel = titel.trim();
     }
     if (!node.bearbeitet_von.includes(req.user.sub)) {
       node.bearbeitet_von.push(req.user.sub);

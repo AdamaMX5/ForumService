@@ -15,20 +15,31 @@ export function EditTextModal({
   onCancel: () => void;
 }) {
   const { api } = useForumAuth();
+  const isThema = node.typ === 'thema';
   const column = primaryTextColumn(node.texte);
   const initialText = node.texte[column]?.text ?? '';
+  const initialTitel = node.titel ?? '';
+  const [titel, setTitel] = useState(initialTitel);
   const [text, setText] = useState(initialText);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const trimmedTitel = titel.trim();
+  const trimmedText = text.trim();
+  const titelChanged = isThema && Boolean(trimmedTitel) && trimmedTitel !== initialTitel.trim();
+  const textChanged = Boolean(trimmedText) && trimmedText !== initialText.trim();
+  const canSave = titelChanged || textChanged;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = text.trim();
-    if (!trimmed || trimmed === initialText.trim()) return;
+    if (!canSave) return;
     setIsSubmitting(true);
     setError(null);
     try {
-      const updated = await api.updateNodeText(node.id, { [column]: trimmed });
+      const updated = await api.updateNodeText(node.id, {
+        ...(titelChanged ? { titel: trimmedTitel } : {}),
+        ...(textChanged ? { [column]: trimmedText } : {}),
+      });
       onSaved(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Speichern fehlgeschlagen');
@@ -59,6 +70,16 @@ export function EditTextModal({
         <p className="text-xs text-gray-500">
           Speichern legt eine neue Textversion an - die vorherigen Versionen bleiben erhalten.
         </p>
+        {isThema && (
+          <input
+            type="text"
+            value={titel}
+            onChange={(e) => setTitel(e.target.value)}
+            maxLength={200}
+            placeholder="Überschrift"
+            className="w-full rounded border border-gray-300 px-2 py-1 text-sm font-medium dark:border-gray-600 dark:bg-gray-800"
+          />
+        )}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -78,7 +99,7 @@ export function EditTextModal({
           </button>
           <button
             type="submit"
-            disabled={isSubmitting || !text.trim() || text.trim() === initialText.trim()}
+            disabled={isSubmitting || !canSave}
             className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {isSubmitting ? 'Speichern…' : 'Neue Version speichern'}

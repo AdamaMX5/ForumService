@@ -25,7 +25,7 @@ async function createThema(token, text) {
   const res = await request(app)
     .post('/nodes')
     .set('Authorization', `Bearer ${token}`)
-    .send({ typ: 'thema', texte: { neutral: text } });
+    .send({ typ: 'thema', titel: text, texte: { neutral: text } });
   return res.body;
 }
 

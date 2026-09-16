@@ -46,8 +46,8 @@ Nur schreibende Aktionen (Node/Kommentar anlegen, liken, editieren) erfordern ei
 | `GET` | `/nodes/:id/kommentare` | optional JWT | Paginierte Kommentare (chronologisch) — Query: `cursor`, `limit` |
 | `GET` | `/nodes/:id/referenzen` | optional JWT | Ausgehende `referenz`-Edges, aufgelöst zu den Ziel-Nodes (für den Ziel-Aufrufer unsichtbare/gelöschte Ziele werden stillschweigend gefiltert) — Query: `limit` |
 | `GET` | `/nodes/:id/pfad` | optional JWT | Pfad von der Thema-Wurzel bis `:id` (root-first) — für Deep-Linking (`?fokus=`), damit der Client den Baum entlang aufklappen kann |
-| `POST` | `/nodes` | JWT | Neuer Node — Body: `typ` (`thema`\|`argument`)*, `texte: { neutral?, pro?, contra? }` (mind. eine Spalte), `anhaenge?`; bei `typ: "argument"` zusätzlich `parent_id`*, `edge_typ`* (`pro`\|`contra`\|`differenzierung`) → `201` |
-| `PUT` | `/nodes/:id/text` | JWT + `FORUM_MODERATOR`/`ADMIN` | Neue Textversion anlegen — Body: `neutral?`, `pro?`, `contra?` (mind. eine) |
+| `POST` | `/nodes` | JWT | Neuer Node — Body: `typ` (`thema`\|`argument`)*, `texte: { neutral?, pro?, contra? }` (mind. eine Spalte), `anhaenge?`; bei `typ: "thema"` zusätzlich `titel`* (Pflichtfeld, kurze Überschrift); bei `typ: "argument"` zusätzlich `parent_id`*, `edge_typ`* (`pro`\|`contra`\|`differenzierung`) — ein für `typ: "argument"` mitgeschicktes `titel` wird ignoriert → `201` |
+| `PUT` | `/nodes/:id/text` | JWT + `FORUM_MODERATOR`/`ADMIN` | Neue Textversion anlegen und/oder (nur `typ: "thema"`) `titel` aktualisieren — Body: `titel?`, `neutral?`, `pro?`, `contra?` (mind. eines der vier); `titel` auf einem Argument → `400` |
 | `PUT` | `/nodes/:id/sichtbarkeit` | JWT + `ADMIN` | Nur `typ: "thema"` — Body: `{ sichtbarkeit: "oeffentlich" \| "privat" }` |
 | `DELETE` | `/nodes/:id` | JWT + `FORUM_MODERATOR`/`ADMIN` | Soft-Delete — Body optional: `{ grund }` → `204` |
 | `POST` | `/nodes/:id/referenz` | JWT | Referenz-Edge auf bestehenden Node anlegen — Body: `{ target_node_id }` → `201` |
@@ -58,7 +58,10 @@ Nur schreibende Aktionen (Node/Kommentar anlegen, liken, editieren) erfordern ei
 **Node-Response-Shape** (`serializeNode`): `id`, `typ`, `texte: { neutral, pro, contra }` (jeweils nur
 die aktuellste Version), `anhaenge`, `ersteller_id`, `erstellt_am`, `likes_count`,
 `comments_count`, `liked_by_me` (`true`/`false`/`null` — `null` = anonymer oder ungeprüfter Aufrufer),
-`bearbeitet_von`, `soft_deleted(_grund/_von)`, und bei `typ: "thema"` zusätzlich `sichtbarkeit`.
+`bearbeitet_von`, `soft_deleted(_grund/_von)`, und bei `typ: "thema"` zusätzlich `sichtbarkeit` und
+`titel` (kurze Überschrift, getrennt vom Fließtext in `texte`; `null` bei Themen, die vor Einführung
+dieses Felds angelegt wurden — Clients fallen in dem Fall auf den bisherigen (gekürzten) Text als
+Anzeige-Überschrift zurück).
 
 ---
 

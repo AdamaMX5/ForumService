@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown';
 import { useForumAuth } from '../auth/AuthContext';
 import { useForumUI } from './ForumUIContext';
 import { LikeButton } from './LikeButton';
@@ -26,9 +27,19 @@ export function ThreadHeader({
   const { accessToken } = useForumAuth();
   const { sort, setSort, onOpenComments, onRequireAuth } = useForumUI();
 
+  // Legacy themen created before the `titel` field existed have no separate heading - their
+  // `texte.neutral` doubled as both, so it stays the heading there instead of being shown twice.
+  const heading = root.titel || primaryText(root.texte) || '(ohne Titel)';
+  const bodyText = root.titel ? primaryText(root.texte) : '';
+
   return (
     <header className="space-y-2 border-b border-gray-200 pb-3 dark:border-gray-700">
-      <h1 className="text-xl font-bold">{primaryText(root.texte) || '(ohne Titel)'}</h1>
+      <h1 className="text-xl font-bold">{heading}</h1>
+      {bodyText && (
+        <div className="prose prose-sm max-w-none dark:prose-invert">
+          <ReactMarkdown>{bodyText}</ReactMarkdown>
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3 text-sm">
           <LikeButton

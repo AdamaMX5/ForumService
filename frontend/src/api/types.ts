@@ -41,6 +41,10 @@ export interface ForumNode {
   soft_deleted_von?: string;
   // Only present on typ: "thema" (see serializeNode).
   sichtbarkeit?: Sichtbarkeit;
+  // Only present on typ: "thema" - short heading, separate from the body text in `texte`. `null`
+  // for themen created before this field existed (see ForumService.md) - fall back to
+  // primaryText(texte) for display in that case.
+  titel?: string | null;
   // true/false when the request was authenticated, null when anonymous (unknown) - see
   // GET /nodes/:id, GET /nodes/:id/kinder, GET /themen.
   liked_by_me: boolean | null;
@@ -83,6 +87,8 @@ export interface ReferenzEdge {
 
 export interface NewNodeInput {
   typ: NodeTyp;
+  // Required by the backend when typ is "thema"; ignored for typ "argument".
+  titel?: string;
   texte: { neutral?: string; pro?: string; contra?: string };
   anhaenge?: Array<{ typ: Anhang['typ']; url: string; titel?: string }>;
   parent_id?: string;

@@ -41,7 +41,7 @@ export function ThemenListe({ onSelect }: { onSelect: (nodeId: string) => void }
               className="forum-card w-full rounded border border-gray-200 bg-white p-3 text-left hover:border-blue-400 dark:border-gray-700 dark:bg-gray-900"
             >
               <p className="font-medium text-gray-900 dark:text-gray-50">
-                {primaryText(thema.texte) || '(ohne Titel)'}
+                {thema.titel || primaryText(thema.texte) || '(ohne Titel)'}
               </p>
               <p className="mt-1 text-xs text-gray-500">
                 👍 {thema.likes_count} · 💬 {thema.comments_count}

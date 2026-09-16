@@ -212,7 +212,11 @@ describe('ForumThread', () => {
       await user.click(screen.getByRole('button', { name: 'Neues Thema erstellen' }));
 
       const form = screen.getByRole('dialog', { name: 'Neues Thema erstellen' });
-      await user.type(within(form).getByPlaceholderText('Worum soll es in diesem Thema gehen?'), 'Ein brandneues Thema');
+      await user.type(within(form).getByPlaceholderText('Überschrift'), 'Ein brandneues Thema');
+      await user.type(
+        within(form).getByPlaceholderText('Worum soll es in diesem Thema gehen? (Markdown wird unterstützt)'),
+        'Der Beschreibungstext'
+      );
       await user.click(within(form).getByRole('button', { name: 'Thema erstellen' }));
 
       await waitFor(() => expect(screen.getByText('Ein brandneues Thema')).toBeInTheDocument());

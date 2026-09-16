@@ -254,6 +254,7 @@ export const handlers = [
   http.post(forumUrl('/nodes'), async ({ request }) => {
     const body = (await request.json()) as {
       typ: 'thema' | 'argument';
+      titel?: string;
       texte: { neutral?: string; pro?: string; contra?: string };
       parent_id?: string;
       edge_typ?: EdgeTyp;
@@ -275,7 +276,7 @@ export const handlers = [
       bearbeitet_von: [],
       soft_deleted: false,
       liked_by_me: false,
-      ...(body.typ === 'thema' ? { sichtbarkeit: 'oeffentlich' as const } : {}),
+      ...(body.typ === 'thema' ? { sichtbarkeit: 'oeffentlich' as const, titel: body.titel ?? null } : {}),
     };
     mockNodes.set(id, created);
     if (body.parent_id && body.edge_typ) {
@@ -290,7 +291,7 @@ export const handlers = [
   http.put(forumUrl('/nodes/:id/text'), async ({ request, params }) => {
     const node = mockNodes.get(params.id as string);
     if (!node || node.soft_deleted) return HttpResponse.json({ error: 'Not found' }, { status: 404 });
-    const body = (await request.json()) as { neutral?: string; pro?: string; contra?: string };
+    const body = (await request.json()) as { titel?: string; neutral?: string; pro?: string; contra?: string };
     (['neutral', 'pro', 'contra'] as const).forEach((col) => {
       const value = body[col];
       if (typeof value === 'string' && value.trim().length > 0) {
@@ -298,6 +299,9 @@ export const handlers = [
         node.texte[col] = { version: nextVersion, text: value.trim(), autor_id: 'mock-user-1', datum: new Date().toISOString() };
       }
     });
+    if (node.typ === 'thema' && typeof body.titel === 'string' && body.titel.trim().length > 0) {
+      node.titel = body.titel.trim();
+    }
     if (!node.bearbeitet_von.includes('mock-user-1')) node.bearbeitet_von.push('mock-user-1');
     return HttpResponse.json(withLikedByMe(node, request));
   }),
